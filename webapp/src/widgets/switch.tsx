@@ -8,11 +8,15 @@ type Props = {
     onChanged: (isOn: boolean) => void
     isOn: boolean
     readOnly?: boolean
+    size?: string
 }
 
 // Switch is an on-off style switch / checkbox
 function Switch(props: Props): JSX.Element {
-    const className = props.isOn ? 'Switch on' : 'Switch'
+    const switchSize = `size--${props.size === 'medium' ? 'medium' : 'small'}`
+    const switchIsOn = props.isOn ? ' on' : ''
+    const switchIsReadonly = props.readOnly ? ' readonly' : ''
+    const className = `Switch override-main ${switchSize}${switchIsOn}${switchIsReadonly}`
     return (
         <div
             className={className}

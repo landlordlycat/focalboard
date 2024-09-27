@@ -1,32 +1,45 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {createAsyncThunk} from '@reduxjs/toolkit'
+import {createAsyncThunk, createSelector} from '@reduxjs/toolkit'
 
 import {default as client} from '../octoClient'
-import {UserWorkspace} from '../user'
-import {Utils} from '../utils'
+import {Subscription} from '../wsclient'
+import {ErrorId} from '../errors'
 
-const getUserWorkspaces = async ():Promise<UserWorkspace[]> => {
-    // Concept of workspaces is only applicable when running as a plugin.
-    // There is always only one, single workspace in personal server edition.
-    return Utils.isFocalboardPlugin() ? client.getUserWorkspaces() : []
-}
+import {RootState} from './index'
 
 export const initialLoad = createAsyncThunk(
     'initialLoad',
     async () => {
-        const [workspace, workspaceUsers, blocks, userWorkspaces] = await Promise.all([
-            client.getWorkspace(),
-            client.getWorkspaceUsers(),
-            client.getAllBlocks(),
-            getUserWorkspaces(),
+        const [me, myConfig, team, teams, boards, boardsMemberships, boardTemplates, limits] = await Promise.all([
+            client.getMe(),
+            client.getMyConfig(),
+            client.getTeam(),
+            client.getTeams(),
+            client.getBoards(),
+            client.getMyBoardMemberships(),
+            client.getTeamTemplates(),
+            client.getBoardsCloudLimits(),
         ])
+
+        // if no me, normally user not logged in
+        if (!me) {
+            throw new Error(ErrorId.NotLoggedIn)
+        }
+
+        // if no team, either bad id, or user doesn't have access
+        if (!team) {
+            throw new Error(ErrorId.TeamUndefined)
+        }
         return {
-            workspace,
-            workspaceUsers,
-            blocks,
-            userWorkspaces,
+            team,
+            teams,
+            boards,
+            boardsMemberships,
+            boardTemplates,
+            limits,
+            myConfig,
         }
     },
 )
@@ -34,7 +47,53 @@ export const initialLoad = createAsyncThunk(
 export const initialReadOnlyLoad = createAsyncThunk(
     'initialReadOnlyLoad',
     async (boardId: string) => {
-        const blocks = client.getSubtree(boardId, 3)
-        return blocks
+        const [board, blocks] = await Promise.all([
+            client.getBoard(boardId),
+            client.getAllBlocks(boardId),
+        ])
+
+        // if no board, read_token invalid
+        if (!board) {
+            throw new Error(ErrorId.InvalidReadOnlyBoard)
+        }
+
+        return {board, blocks}
     },
+)
+
+export const loadBoardData = createAsyncThunk(
+    'loadBoardData',
+    async (boardID: string) => {
+        const blocks = await client.getAllBlocks(boardID)
+        return {
+            blocks,
+        }
+    },
+)
+
+export const loadBoards = createAsyncThunk(
+    'loadBoards',
+    async () => {
+        const boards = await client.getBoards()
+        return {
+            boards,
+        }
+    },
+)
+
+export const loadMyBoardsMemberships = createAsyncThunk(
+    'loadMyBoardsMemberships',
+    async () => {
+        const boardsMemberships = await client.getMyBoardMemberships()
+        return {
+            boardsMemberships,
+        }
+    },
+)
+
+export const getUserBlockSubscriptions = (state: RootState): Subscription[] => state.users.blockSubscriptions
+
+export const getUserBlockSubscriptionList = createSelector(
+    getUserBlockSubscriptions,
+    (subscriptions) => subscriptions,
 )

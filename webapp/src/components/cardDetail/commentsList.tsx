@@ -5,36 +5,47 @@ import {FormattedMessage, useIntl} from 'react-intl'
 
 import {CommentBlock, createCommentBlock} from '../../blocks/commentBlock'
 import mutator from '../../mutator'
+import {useAppSelector} from '../../store/hooks'
 import {Utils} from '../../utils'
 import Button from '../../widgets/buttons/button'
 
 import {MarkdownEditor} from '../markdownEditor'
 
+import {IUser} from '../../user'
+import {getMe} from '../../store/users'
+import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
+import {Permission} from '../../constants'
+
+import AddCommentTourStep from '../onboardingTour/addComments/addComments'
+
 import Comment from './comment'
+
 import './commentsList.scss'
 
 type Props = {
     comments: readonly CommentBlock[]
-    rootId: string
+    boardId: string
     cardId: string
     readonly: boolean
 }
 
-const CommentsList = React.memo((props: Props) => {
+const CommentsList = (props: Props) => {
     const [newComment, setNewComment] = useState('')
+    const me = useAppSelector<IUser|null>(getMe)
+    const canDeleteOthersComments = useHasCurrentBoardPermissions([Permission.DeleteOthersComments])
 
     const onSendClicked = () => {
         const commentText = newComment
         if (commentText) {
-            const {rootId, cardId} = props
+            const {cardId, boardId} = props
             Utils.log(`Send comment: ${commentText}`)
             Utils.assertValue(cardId)
 
             const comment = createCommentBlock()
             comment.parentId = cardId
-            comment.rootId = rootId
+            comment.boardId = boardId
             comment.title = commentText
-            mutator.insertBlock(comment, 'add comment')
+            mutator.insertBlock(boardId, comment, 'add comment')
             setNewComment('')
         }
     }
@@ -42,14 +53,11 @@ const CommentsList = React.memo((props: Props) => {
     const {comments} = props
     const intl = useIntl()
 
-    // TODO: Replace this placeholder
-    const userImageUrl = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="fill: rgb(192, 192, 192);"><rect width="100" height="100" /></svg>'
-
     const newCommentComponent = (
-        <div className='commentrow'>
+        <div className='CommentsList__new'>
             <img
                 className='comment-avatar'
-                src={userImageUrl}
+                src={Utils.getProfilePicture(me?.id)}
             />
             <MarkdownEditor
                 className='newcomment'
@@ -60,7 +68,6 @@ const CommentsList = React.memo((props: Props) => {
                         setNewComment(value)
                     }
                 }}
-                onAccept={onSendClicked}
             />
 
             {newComment &&
@@ -74,28 +81,35 @@ const CommentsList = React.memo((props: Props) => {
                 />
             </Button>
             }
+
+            <AddCommentTourStep/>
         </div>
     )
 
     return (
         <div className='CommentsList'>
-            {comments.map((comment) => (
-                <Comment
-                    key={comment.id}
-                    comment={comment}
-                    userImageUrl={userImageUrl}
-                    userId={comment.modifiedBy}
-                    readonly={props.readonly}
-                />
-            ))}
-
             {/* New comment */}
             {!props.readonly && newCommentComponent}
 
+            {comments.slice(0).reverse().map((comment) => {
+                // Only modify _own_ comments, EXCEPT for Admins, which can delete _any_ comment
+                // NOTE: editing comments will exist in the future (in addition to deleting)
+                const canDeleteComment: boolean = canDeleteOthersComments || me?.id === comment.modifiedBy
+                return (
+                    <Comment
+                        key={comment.id}
+                        comment={comment}
+                        userImageUrl={Utils.getProfilePicture(comment.modifiedBy)}
+                        userId={comment.modifiedBy}
+                        readonly={props.readonly || !canDeleteComment}
+                    />
+                )
+            })}
+
             {/* horizontal divider below comments */}
-            {!(comments.length === 0 && props.readonly) && <hr/>}
+            {!(comments.length === 0 && props.readonly) && <hr className='CommentsList__divider'/>}
         </div>
     )
-})
+}
 
-export default CommentsList
+export default React.memo(CommentsList)

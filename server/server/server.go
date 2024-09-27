@@ -25,7 +25,6 @@ import (
 	"github.com/mattermost/focalboard/server/services/notify/notifylogger"
 	"github.com/mattermost/focalboard/server/services/scheduler"
 	"github.com/mattermost/focalboard/server/services/store"
-	"github.com/mattermost/focalboard/server/services/store/mattermostauthlayer"
 	"github.com/mattermost/focalboard/server/services/store/sqlstore"
 	"github.com/mattermost/focalboard/server/services/telemetry"
 	"github.com/mattermost/focalboard/server/services/webhook"
@@ -34,9 +33,8 @@ import (
 	"github.com/mattermost/focalboard/server/ws"
 	"github.com/oklog/run"
 
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
-
-	"github.com/mattermost/mattermost-server/v6/shared/filestore"
+	"github.com/mattermost/mattermost/server/public/shared/mlog"
+	"github.com/mattermost/mattermost/server/v8/platform/shared/filestore"
 )
 
 const (
@@ -55,7 +53,7 @@ type Server struct {
 	store                  store.Store
 	filesBackend           filestore.FileBackend
 	telemetry              *telemetry.Service
-	logger                 *mlog.Logger
+	logger                 mlog.LoggerIFace
 	cleanUpSessionsTask    *scheduler.ScheduledTask
 	metricsServer          *metrics.Service
 	metricsService         *metrics.Metrics
@@ -75,12 +73,12 @@ func New(params Params) (*Server, error) {
 		return nil, err
 	}
 
-	authenticator := auth.New(params.Cfg, params.DBStore)
+	authenticator := auth.New(params.Cfg, params.DBStore, params.PermissionsService)
 
 	// if no ws adapter is provided, we spin up a websocket server
 	wsAdapter := params.WSAdapter
 	if wsAdapter == nil {
-		wsAdapter = ws.NewServer(authenticator, params.SingleUserToken, params.Cfg.AuthMode == MattermostAuthMod, params.Logger)
+		wsAdapter = ws.NewServer(authenticator, params.SingleUserToken, params.Cfg.AuthMode == MattermostAuthMod, params.Logger, params.DBStore)
 	}
 
 	filesBackendSettings := filestore.FileBackendSettings{}
@@ -96,6 +94,7 @@ func New(params Params) (*Server, error) {
 	filesBackendSettings.AmazonS3SignV2 = params.Cfg.FilesS3Config.SignV2
 	filesBackendSettings.AmazonS3SSE = params.Cfg.FilesS3Config.SSE
 	filesBackendSettings.AmazonS3Trace = params.Cfg.FilesS3Config.Trace
+	filesBackendSettings.AmazonS3RequestTimeoutMilliseconds = params.Cfg.FilesS3Config.Timeout
 
 	filesBackend, appErr := filestore.NewFileBackend(filesBackendSettings)
 	if appErr != nil {
@@ -127,29 +126,32 @@ func New(params Params) (*Server, error) {
 	// Init notification services
 	notificationService, errNotify := initNotificationService(params.NotifyBackends, params.Logger)
 	if errNotify != nil {
-		return nil, fmt.Errorf("cannot initialize notification service: %w", errNotify)
+		return nil, fmt.Errorf("cannot initialize notification service(s): %w", errNotify)
 	}
 
 	appServices := app.Services{
-		Auth:          authenticator,
-		Store:         params.DBStore,
-		FilesBackend:  filesBackend,
-		Webhook:       webhookClient,
-		Metrics:       metricsService,
-		Notifications: notificationService,
-		Logger:        params.Logger,
+		Auth:             authenticator,
+		Store:            params.DBStore,
+		FilesBackend:     filesBackend,
+		Webhook:          webhookClient,
+		Metrics:          metricsService,
+		Notifications:    notificationService,
+		Logger:           params.Logger,
+		Permissions:      params.PermissionsService,
+		ServicesAPI:      params.ServicesAPI,
+		SkipTemplateInit: utils.IsRunningUnitTests(),
 	}
 	app := app.New(params.Cfg, wsAdapter, appServices)
 
-	focalboardAPI := api.NewAPI(app, params.SingleUserToken, params.Cfg.AuthMode, params.Logger, auditService)
+	focalboardAPI := api.NewAPI(app, params.SingleUserToken, params.Cfg.AuthMode, params.PermissionsService, params.Logger, auditService)
 
 	// Local router for admin APIs
 	localRouter := mux.NewRouter()
 	focalboardAPI.RegisterAdminRoutes(localRouter)
 
-	// Init workspace
-	if _, err := app.GetRootWorkspace(); err != nil {
-		params.Logger.Error("Unable to get root workspace", mlog.Err(err))
+	// Init team
+	if _, err := app.GetRootTeam(); err != nil {
+		params.Logger.Error("Unable to get root team", mlog.Err(err))
 		return nil, err
 	}
 
@@ -206,7 +208,7 @@ func New(params Params) (*Server, error) {
 	return &server, nil
 }
 
-func NewStore(config *config.Configuration, logger *mlog.Logger) (store.Store, error) {
+func NewStore(config *config.Configuration, isSingleUser bool, logger mlog.LoggerIFace) (store.Store, error) {
 	sqlDB, err := sql.Open(config.DBType, config.DBConfigString)
 	if err != nil {
 		logger.Error("connectDatabase failed", mlog.Err(err))
@@ -219,17 +221,20 @@ func NewStore(config *config.Configuration, logger *mlog.Logger) (store.Store, e
 		return nil, err
 	}
 
+	storeParams := sqlstore.Params{
+		DBType:           config.DBType,
+		DBPingAttempts:   config.DBPingAttempts,
+		ConnectionString: config.DBConfigString,
+		TablePrefix:      config.DBTablePrefix,
+		Logger:           logger,
+		DB:               sqlDB,
+		IsSingleUser:     isSingleUser,
+	}
+
 	var db store.Store
-	db, err = sqlstore.New(config.DBType, config.DBConfigString, config.DBTablePrefix, logger, sqlDB, false)
+	db, err = sqlstore.New(storeParams)
 	if err != nil {
 		return nil, err
-	}
-	if config.AuthMode == MattermostAuthMod {
-		layeredStore, err2 := mattermostauthlayer.New(config.DBType, db.(*sqlstore.SQLStore).DBHandle(), db, logger)
-		if err2 != nil {
-			return nil, err2
-		}
-		db = layeredStore
 	}
 	return db, nil
 }
@@ -267,17 +272,24 @@ func (s *Server) Start() error {
 			s.logger.Error("Error updating metrics", mlog.String("group", "blocks"), mlog.Err(err))
 			return
 		}
-		s.logger.Log(mlog.LvlFBMetrics, "Block metrics collected", mlog.Map("block_counts", blockCounts))
+		s.logger.Debug("Block metrics collected", mlog.Map("block_counts", blockCounts))
 		for blockType, count := range blockCounts {
 			s.metricsService.ObserveBlockCount(blockType, count)
 		}
-		workspaceCount, err := s.store.GetWorkspaceCount()
+		boardCount, err := s.store.GetBoardCount()
 		if err != nil {
-			s.logger.Error("Error updating metrics", mlog.String("group", "workspaces"), mlog.Err(err))
+			s.logger.Error("Error updating metrics", mlog.String("group", "boards"), mlog.Err(err))
 			return
 		}
-		s.logger.Log(mlog.LvlFBMetrics, "Workspace metrics collected", mlog.Int64("workspace_count", workspaceCount))
-		s.metricsService.ObserveWorkspaceCount(workspaceCount)
+		s.logger.Debug("Board metrics collected", mlog.Int("board_count", boardCount))
+		s.metricsService.ObserveBoardCount(boardCount)
+		teamCount, err := s.store.GetTeamCount()
+		if err != nil {
+			s.logger.Error("Error updating metrics", mlog.String("group", "teams"), mlog.Err(err))
+			return
+		}
+		s.logger.Debug("Team metrics collected", mlog.Int("team_count", teamCount))
+		s.metricsService.ObserveTeamCount(teamCount)
 	}
 	// metricsUpdater()   Calling this immediately causes integration unit tests to fail.
 	s.metricsUpdaterTask = scheduler.CreateRecurringTask("updateMetrics", metricsUpdater, updateMetricsTaskFrequency)
@@ -335,6 +347,8 @@ func (s *Server) Shutdown() error {
 		s.logger.Warn("Error occurred when shutting down notification service", mlog.Err(err))
 	}
 
+	s.app.Shutdown()
+
 	defer s.logger.Info("Server.Shutdown")
 
 	return s.store.Shutdown()
@@ -344,7 +358,7 @@ func (s *Server) Config() *config.Configuration {
 	return s.config
 }
 
-func (s *Server) Logger() *mlog.Logger {
+func (s *Server) Logger() mlog.LoggerIFace {
 	return s.logger
 }
 
@@ -352,30 +366,28 @@ func (s *Server) App() *app.App {
 	return s.app
 }
 
-func (s *Server) UpdateClientConfig(pluginConfig map[string]interface{}) {
-	for index, value := range pluginConfig {
-		if index == "EnablePublicSharedBoards" {
-			b, ok := value.(bool)
-			if !ok {
-				s.logger.Warn("Invalid value for config value", mlog.String(index, value.(string)))
-			}
-			s.config.EnablePublicSharedBoards = b
-		}
-	}
+func (s *Server) Store() store.Store {
+	return s.store
+}
+
+func (s *Server) UpdateAppConfig() {
 	s.app.SetConfig(s.config)
 }
 
 // Local server
 
 func (s *Server) startLocalModeServer() error {
-	s.localModeServer = &http.Server{
+	s.localModeServer = &http.Server{ //nolint:gosec
 		Handler:     s.localRouter,
 		ConnContext: api.SetContextConn,
 	}
 
 	// TODO: Close and delete socket file on shutdown
-	if err := syscall.Unlink(s.config.LocalModeSocketLocation); err != nil {
-		s.logger.Error("Unable to unlink socket.", mlog.Err(err))
+	// Delete existing socket if it exists
+	if _, err := os.Stat(s.config.LocalModeSocketLocation); err == nil {
+		if err := syscall.Unlink(s.config.LocalModeSocketLocation); err != nil {
+			s.logger.Error("Unable to unlink socket.", mlog.Err(err))
+		}
 	}
 
 	socket := s.config.LocalModeSocketLocation
@@ -414,7 +426,7 @@ type telemetryOptions struct {
 	cfg         *config.Configuration
 	telemetryID string
 	serverID    string
-	logger      *mlog.Logger
+	logger      mlog.LoggerIFace
 	singleUser  bool
 }
 
@@ -433,11 +445,12 @@ func initTelemetry(opts telemetryOptions) *telemetry.Service {
 	})
 	telemetryService.RegisterTracker("config", func() (telemetry.Tracker, error) {
 		return map[string]interface{}{
-			"serverRoot":  opts.cfg.ServerRoot == config.DefaultServerRoot,
-			"port":        opts.cfg.Port == config.DefaultPort,
-			"useSSL":      opts.cfg.UseSSL,
-			"dbType":      opts.cfg.DBType,
-			"single_user": opts.singleUser,
+			"serverRoot":                 opts.cfg.ServerRoot == config.DefaultServerRoot,
+			"port":                       opts.cfg.Port == config.DefaultPort,
+			"useSSL":                     opts.cfg.UseSSL,
+			"dbType":                     opts.cfg.DBType,
+			"single_user":                opts.singleUser,
+			"allow_public_shared_boards": opts.cfg.EnablePublicSharedBoards,
 		}, nil
 	})
 	telemetryService.RegisterTracker("activity", func() (telemetry.Tracker, error) {
@@ -476,20 +489,30 @@ func initTelemetry(opts telemetryOptions) *telemetry.Service {
 		}
 		return m, nil
 	})
-	telemetryService.RegisterTracker("workspaces", func() (telemetry.Tracker, error) {
-		count, err := opts.app.GetWorkspaceCount()
+	telemetryService.RegisterTracker("boards", func() (telemetry.Tracker, error) {
+		boardCount, err := opts.app.GetBoardCount()
 		if err != nil {
 			return nil, err
 		}
 		m := map[string]interface{}{
-			"workspaces": count,
+			"boards": boardCount,
+		}
+		return m, nil
+	})
+	telemetryService.RegisterTracker("teams", func() (telemetry.Tracker, error) {
+		count, err := opts.app.GetTeamCount()
+		if err != nil {
+			return nil, err
+		}
+		m := map[string]interface{}{
+			"teams": count,
 		}
 		return m, nil
 	})
 	return telemetryService
 }
 
-func initNotificationService(backends []notify.Backend, logger *mlog.Logger) (*notify.Service, error) {
+func initNotificationService(backends []notify.Backend, logger mlog.LoggerIFace) (*notify.Service, error) {
 	loggerBackend := notifylogger.New(logger, mlog.LvlDebug)
 
 	backends = append(backends, loggerBackend)

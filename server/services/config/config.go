@@ -9,6 +9,7 @@ import (
 const (
 	DefaultServerRoot = "http://localhost:8000"
 	DefaultPort       = 8000
+	DBPingAttempts    = 5
 )
 
 type AmazonS3Config struct {
@@ -22,32 +23,41 @@ type AmazonS3Config struct {
 	SignV2          bool
 	SSE             bool
 	Trace           bool
+	Timeout         int64
 }
 
 // Configuration is the app configuration stored in a json file.
 type Configuration struct {
-	ServerRoot               string         `json:"serverRoot" mapstructure:"serverRoot"`
-	Port                     int            `json:"port" mapstructure:"port"`
-	DBType                   string         `json:"dbtype" mapstructure:"dbtype"`
-	DBConfigString           string         `json:"dbconfig" mapstructure:"dbconfig"`
-	DBTablePrefix            string         `json:"dbtableprefix" mapstructure:"dbtableprefix"`
-	UseSSL                   bool           `json:"useSSL" mapstructure:"useSSL"`
-	SecureCookie             bool           `json:"secureCookie" mapstructure:"secureCookie"`
-	WebPath                  string         `json:"webpath" mapstructure:"webpath"`
-	FilesDriver              string         `json:"filesdriver" mapstructure:"filesdriver"`
-	FilesS3Config            AmazonS3Config `json:"filess3config" mapstructure:"filess3config"`
-	FilesPath                string         `json:"filespath" mapstructure:"filespath"`
-	Telemetry                bool           `json:"telemetry" mapstructure:"telemetry"`
-	TelemetryID              string         `json:"telemetryid" mapstructure:"telemetryid"`
-	PrometheusAddress        string         `json:"prometheus_address" mapstructure:"prometheus_address"`
-	WebhookUpdate            []string       `json:"webhook_update" mapstructure:"webhook_update"`
-	Secret                   string         `json:"secret" mapstructure:"secret"`
-	SessionExpireTime        int64          `json:"session_expire_time" mapstructure:"session_expire_time"`
-	SessionRefreshTime       int64          `json:"session_refresh_time" mapstructure:"session_refresh_time"`
-	LocalOnly                bool           `json:"localonly" mapstructure:"localonly"`
-	EnableLocalMode          bool           `json:"enableLocalMode" mapstructure:"enableLocalMode"`
-	LocalModeSocketLocation  string         `json:"localModeSocketLocation" mapstructure:"localModeSocketLocation"`
-	EnablePublicSharedBoards bool           `json:"enablePublicSharedBoards" mapstructure:"enablePublicSharedBoards"`
+	ServerRoot               string            `json:"serverRoot" mapstructure:"serverRoot"`
+	Port                     int               `json:"port" mapstructure:"port"`
+	DBType                   string            `json:"dbtype" mapstructure:"dbtype"`
+	DBConfigString           string            `json:"dbconfig" mapstructure:"dbconfig"`
+	DBPingAttempts           int               `json:"dbpingattempts" mapstructure:"dbpingattempts"`
+	DBTablePrefix            string            `json:"dbtableprefix" mapstructure:"dbtableprefix"`
+	UseSSL                   bool              `json:"useSSL" mapstructure:"useSSL"`
+	SecureCookie             bool              `json:"secureCookie" mapstructure:"secureCookie"`
+	WebPath                  string            `json:"webpath" mapstructure:"webpath"`
+	FilesDriver              string            `json:"filesdriver" mapstructure:"filesdriver"`
+	FilesS3Config            AmazonS3Config    `json:"filess3config" mapstructure:"filess3config"`
+	FilesPath                string            `json:"filespath" mapstructure:"filespath"`
+	MaxFileSize              int64             `json:"maxfilesize" mapstructure:"maxfilesize"`
+	Telemetry                bool              `json:"telemetry" mapstructure:"telemetry"`
+	TelemetryID              string            `json:"telemetryid" mapstructure:"telemetryid"`
+	PrometheusAddress        string            `json:"prometheusaddress" mapstructure:"prometheusaddress"`
+	WebhookUpdate            []string          `json:"webhook_update" mapstructure:"webhook_update"`
+	Secret                   string            `json:"secret" mapstructure:"secret"`
+	SessionExpireTime        int64             `json:"session_expire_time" mapstructure:"session_expire_time"`
+	SessionRefreshTime       int64             `json:"session_refresh_time" mapstructure:"session_refresh_time"`
+	LocalOnly                bool              `json:"localonly" mapstructure:"localonly"`
+	EnableLocalMode          bool              `json:"enableLocalMode" mapstructure:"enableLocalMode"`
+	LocalModeSocketLocation  string            `json:"localModeSocketLocation" mapstructure:"localModeSocketLocation"`
+	EnablePublicSharedBoards bool              `json:"enablePublicSharedBoards" mapstructure:"enablePublicSharedBoards"`
+	FeatureFlags             map[string]string `json:"featureFlags" mapstructure:"featureFlags"`
+	EnableDataRetention      bool              `json:"enable_data_retention" mapstructure:"enable_data_retention"`
+	DataRetentionDays        int               `json:"data_retention_days" mapstructure:"data_retention_days"`
+	TeammateNameDisplay      string            `json:"teammate_name_display" mapstructure:"teammateNameDisplay"`
+	ShowEmailAddress         bool              `json:"show_email_address" mapstructure:"showEmailAddress"`
+	ShowFullName             bool              `json:"show_full_name" mapstructure:"showFullName"`
 
 	AuthMode string `json:"authMode" mapstructure:"authMode"`
 
@@ -56,16 +66,23 @@ type Configuration struct {
 
 	AuditCfgFile string `json:"audit_cfg_file" mapstructure:"audit_cfg_file"`
 	AuditCfgJSON string `json:"audit_cfg_json" mapstructure:"audit_cfg_json"`
+
+	NotifyFreqCardSeconds  int `json:"notify_freq_card_seconds" mapstructure:"notify_freq_card_seconds"`
+	NotifyFreqBoardSeconds int `json:"notify_freq_board_seconds" mapstructure:"notify_freq_board_seconds"`
 }
 
 // ReadConfigFile read the configuration from the filesystem.
-func ReadConfigFile() (*Configuration, error) {
-	viper.SetConfigName("config") // name of config file (without extension)
-	viper.SetConfigType("json")   // REQUIRED if the config file does not have the extension in the name
-	viper.AddConfigPath(".")      // optionally look for config in the working directory
+func ReadConfigFile(configFilePath string) (*Configuration, error) {
+	if configFilePath == "" {
+		viper.SetConfigFile("./config.json")
+	} else {
+		viper.SetConfigFile(configFilePath)
+	}
+
 	viper.SetEnvPrefix("focalboard")
 	viper.AutomaticEnv() // read config values from env like FOCALBOARD_SERVERROOT=...
 	viper.SetDefault("ServerRoot", DefaultServerRoot)
+	viper.SetDefault("DBPingAttempts", DBPingAttempts)
 	viper.SetDefault("Port", DefaultPort)
 	viper.SetDefault("DBType", "sqlite3")
 	viper.SetDefault("DBConfigString", "./focalboard.db")
@@ -83,8 +100,16 @@ func ReadConfigFile() (*Configuration, error) {
 	viper.SetDefault("EnableLocalMode", false)
 	viper.SetDefault("LocalModeSocketLocation", "/var/tmp/focalboard_local.socket")
 	viper.SetDefault("EnablePublicSharedBoards", false)
-
 	viper.SetDefault("AuthMode", "native")
+	viper.SetDefault("NotifyFreqCardSeconds", 120)    // 2 minutes after last card edit
+	viper.SetDefault("NotifyFreqBoardSeconds", 86400) // 1 day after last card edit
+	viper.SetDefault("EnableDataRetention", false)
+	viper.SetDefault("FeatureFlags", map[string]string{})
+	viper.SetDefault("DataRetentionDays", 365) // 1 year is default
+	viper.SetDefault("PrometheusAddress", "")
+	viper.SetDefault("TeammateNameDisplay", "username")
+	viper.SetDefault("ShowEmailAddress", false)
+	viper.SetDefault("ShowFullName", false)
 
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file

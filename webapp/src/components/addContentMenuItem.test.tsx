@@ -1,12 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react'
+import React, {ReactElement, ReactNode} from 'react'
 import {render, screen, waitFor} from '@testing-library/react'
 
 import '@testing-library/jest-dom'
 
-import {mocked} from 'ts-jest/utils'
+import {mocked} from 'jest-mock'
 
 import userEvent from '@testing-library/user-event'
 
@@ -22,9 +22,17 @@ import './content/textElement'
 import './content/imageElement'
 import './content/dividerElement'
 import './content/checkboxElement'
+import {CardDetailProvider} from './cardDetail/cardDetailContext'
 
 const board = TestBlockFactory.createBoard()
 const card = TestBlockFactory.createCard(board)
+const wrap = (child: ReactNode): ReactElement => (
+    wrapIntl(
+        <CardDetailProvider card={card} >
+            {child}
+        </CardDetailProvider>,
+    )
+)
 
 jest.mock('../mutator')
 const mockedMutator = mocked(mutator, true)
@@ -35,7 +43,7 @@ describe('components/addContentMenuItem', () => {
     })
     test('return an image menu item', () => {
         const {container} = render(
-            wrapIntl(
+            wrap(
                 <AddContentMenuItem
                     type={'image'}
                     card={card}
@@ -48,7 +56,7 @@ describe('components/addContentMenuItem', () => {
 
     test('return a text menu item', async () => {
         const {container} = render(
-            wrapIntl(
+            wrap(
                 <AddContentMenuItem
                     type={'text'}
                     card={card}
@@ -59,12 +67,12 @@ describe('components/addContentMenuItem', () => {
         expect(container).toMatchSnapshot()
         const buttonElement = screen.getByRole('button', {name: 'text'})
         userEvent.click(buttonElement)
-        await waitFor(() => expect(mockedMutator.performAsUndoGroup).toBeCalled())
+        await waitFor(() => expect(mockedMutator.insertBlock).toBeCalled())
     })
 
     test('return a checkbox menu item', async () => {
         const {container} = render(
-            wrapIntl(
+            wrap(
                 <AddContentMenuItem
                     type={'checkbox'}
                     card={card}
@@ -75,12 +83,12 @@ describe('components/addContentMenuItem', () => {
         expect(container).toMatchSnapshot()
         const buttonElement = screen.getByRole('button', {name: 'checkbox'})
         userEvent.click(buttonElement)
-        await waitFor(() => expect(mockedMutator.performAsUndoGroup).toBeCalled())
+        await waitFor(() => expect(mockedMutator.insertBlock).toBeCalled())
     })
 
     test('return a divider menu item', async () => {
         const {container} = render(
-            wrapIntl(
+            wrap(
                 <AddContentMenuItem
                     type={'divider'}
                     card={card}
@@ -91,12 +99,12 @@ describe('components/addContentMenuItem', () => {
         expect(container).toMatchSnapshot()
         const buttonElement = screen.getByRole('button', {name: 'divider'})
         userEvent.click(buttonElement)
-        await waitFor(() => expect(mockedMutator.performAsUndoGroup).toBeCalled())
+        await waitFor(() => expect(mockedMutator.insertBlock).toBeCalled())
     })
 
-    test('return an error and empty element from unknow type', () => {
+    test('return an error and empty element from unknown type', () => {
         const {container} = render(
-            wrapIntl(
+            wrap(
                 <AddContentMenuItem
                     type={'unknown'}
                     card={card}

@@ -16,21 +16,25 @@ import {
 } from '../../theme'
 import Menu from '../../widgets/menu'
 import MenuWrapper from '../../widgets/menuWrapper'
-import {useAppDispatch} from '../../store/hooks'
+import {useAppDispatch, useAppSelector} from '../../store/hooks'
 import {storeLanguage} from '../../store/language'
+import {getCurrentTeam, Team} from '../../store/teams'
 import {UserSettings} from '../../userSettings'
 
 import './sidebarSettingsMenu.scss'
 import CheckIcon from '../../widgets/icons/check'
 import {Constants} from '../../constants'
 
+import TelemetryClient, {TelemetryCategory, TelemetryActions} from '../../telemetry/telemetryClient'
+
 type Props = {
     activeTheme: string
 }
 
-const SidebarSettingsMenu = React.memo((props: Props) => {
+const SidebarSettingsMenu = (props: Props) => {
     const intl = useIntl()
     const dispatch = useAppDispatch()
+    const currentTeam = useAppSelector<Team|null>(getCurrentTeam)
 
     // we need this as the sidebar doesn't always need to re-render
     // on theme change. This can cause props and the actual
@@ -81,15 +85,42 @@ const SidebarSettingsMenu = React.memo((props: Props) => {
                     />
                 </div>
                 <Menu position='top'>
-                    <Menu.Text
+                    <Menu.SubMenu
                         id='import'
-                        name={intl.formatMessage({id: 'Sidebar.import-archive', defaultMessage: 'Import archive'})}
-                        onClick={async () => Archiver.importFullArchive()}
-                    />
+                        name={intl.formatMessage({id: 'Sidebar.import', defaultMessage: 'Import'})}
+                        position='top'
+                    >
+                        <Menu.Text
+                            id='import_archive'
+                            name={intl.formatMessage({id: 'Sidebar.import-archive', defaultMessage: 'Import archive'})}
+                            onClick={async () => {
+                                TelemetryClient.trackEvent(TelemetryCategory, TelemetryActions.ImportArchive)
+                                Archiver.importFullArchive()
+                            }}
+                        />
+                        {
+                            Constants.imports.map((i) => (
+                                <Menu.Text
+                                    key={`${i.id}-import`}
+                                    id={`${i.id}-import`}
+                                    name={i.displayName}
+                                    onClick={() => {
+                                        TelemetryClient.trackEvent(TelemetryCategory, i.telemetryName)
+                                        window.open(i.href)
+                                    }}
+                                />
+                            ))
+                        }
+                    </Menu.SubMenu>
                     <Menu.Text
                         id='export'
                         name={intl.formatMessage({id: 'Sidebar.export-archive', defaultMessage: 'Export archive'})}
-                        onClick={async () => Archiver.exportFullArchive()}
+                        onClick={async () => {
+                            if (currentTeam) {
+                                TelemetryClient.trackEvent(TelemetryCategory, TelemetryActions.ExportArchive)
+                                Archiver.exportFullArchive(currentTeam.id)
+                            }
+                        }}
                     />
                     <Menu.SubMenu
                         id='lang'
@@ -132,11 +163,12 @@ const SidebarSettingsMenu = React.memo((props: Props) => {
                         name={intl.formatMessage({id: 'Sidebar.random-icons', defaultMessage: 'Random icons'})}
                         isOn={randomIcons}
                         onClick={async () => toggleRandomIcons()}
+                        suppressItemClicked={true}
                     />
                 </Menu>
             </MenuWrapper>
         </div>
     )
-})
+}
 
-export default SidebarSettingsMenu
+export default React.memo(SidebarSettingsMenu)

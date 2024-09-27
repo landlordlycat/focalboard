@@ -1,28 +1,4 @@
-// Package classification Focalboard Server
-//
 // Server for Focalboard
-//
-//     Schemes: http, https
-//     Host: localhost
-//     BasePath: /api/v1
-//     Version: 1.0.0
-//     License: Custom https://github.com/mattermost/focalboard/blob/main/LICENSE.txt
-//     Contact: Focalboard<api@focalboard.com> https://www.focalboard.com
-//
-//     Consumes:
-//     - application/json
-//
-//     Produces:
-//     - application/json
-//
-//     securityDefinitions:
-//       BearerAuth:
-//         type: apiKey
-//         name: Authorization
-//         in: header
-//         description: 'Pass session token using Bearer authentication, e.g. set header "Authorization: Bearer <session token>"'
-//
-// swagger:meta
 package main
 
 import (
@@ -37,9 +13,10 @@ import (
 	"github.com/mattermost/focalboard/server/model"
 	"github.com/mattermost/focalboard/server/server"
 	"github.com/mattermost/focalboard/server/services/config"
+	"github.com/mattermost/focalboard/server/services/permissions/localpermissions"
 )
 import (
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
+	"github.com/mattermost/mattermost/server/public/shared/mlog"
 )
 
 // Active server used with shared code (dll)
@@ -76,19 +53,21 @@ func monitorPid(pid int, logger *mlog.Logger) {
 	}()
 }
 
-func logInfo(logger *mlog.Logger) {
-	logger.Info("FocalBoard Server",
-		mlog.String("version", model.CurrentVersion),
-		mlog.String("edition", model.Edition),
-		mlog.String("build_number", model.BuildNumber),
-		mlog.String("build_date", model.BuildDate),
-		mlog.String("build_hash", model.BuildHash),
-	)
-}
-
 func main() {
-	// config.json file
-	config, err := config.ReadConfigFile()
+	// Command line args
+	pMonitorPid := flag.Int("monitorpid", -1, "a process ID")
+	pPort := flag.Int("port", 0, "the port number")
+	pSingleUser := flag.Bool("single-user", false, "single user mode")
+	pDBType := flag.String("dbtype", "", "Database type")
+	pDBConfig := flag.String("dbconfig", "", "Database config")
+	pConfigFilePath := flag.String(
+		"config",
+		"",
+		"Location of the JSON config file",
+	)
+	flag.Parse()
+
+	config, err := config.ReadConfigFile(*pConfigFilePath)
 	if err != nil {
 		log.Fatal("Unable to read the config file: ", err)
 		return
@@ -112,15 +91,7 @@ func main() {
 		defer restore()
 	}
 
-	logInfo(logger)
-
-	// Command line args
-	pMonitorPid := flag.Int("monitorpid", -1, "a process ID")
-	pPort := flag.Int("port", config.Port, "the port number")
-	pSingleUser := flag.Bool("single-user", false, "single user mode")
-	pDBType := flag.String("dbtype", "", "Database type")
-	pDBConfig := flag.String("dbconfig", "", "Database config")
-	flag.Parse()
+	model.LogServerInfo(logger)
 
 	singleUser := false
 	if pSingleUser != nil {
@@ -151,7 +122,7 @@ func main() {
 	if pDBConfig != nil && len(*pDBConfig) > 0 {
 		config.DBConfigString = *pDBConfig
 		// Don't echo, as the confix string may contain passwords
-		logger.Info("DBConfigString overriden from commandline")
+		logger.Info("DBConfigString overridden from commandline")
 	}
 
 	if pPort != nil && *pPort > 0 && *pPort != config.Port {
@@ -160,16 +131,19 @@ func main() {
 		config.Port = *pPort
 	}
 
-	db, err := server.NewStore(config, logger)
+	db, err := server.NewStore(config, singleUser, logger)
 	if err != nil {
 		logger.Fatal("server.NewStore ERROR", mlog.Err(err))
 	}
 
+	permissionsService := localpermissions.New(db, logger)
+
 	params := server.Params{
-		Cfg:             config,
-		SingleUserToken: singleUserToken,
-		DBStore:         db,
-		Logger:          logger,
+		Cfg:                config,
+		SingleUserToken:    singleUserToken,
+		DBStore:            db,
+		Logger:             logger,
+		PermissionsService: permissionsService,
 	}
 
 	server, err := server.New(params)
@@ -192,31 +166,34 @@ func main() {
 }
 
 // StartServer starts the server
+//
 //export StartServer
-func StartServer(webPath *C.char, filesPath *C.char, port int, singleUserToken, dbConfigString *C.char) {
+func StartServer(webPath *C.char, filesPath *C.char, port int, singleUserToken, dbConfigString, configFilePath *C.char) {
 	startServer(
 		C.GoString(webPath),
 		C.GoString(filesPath),
 		port,
 		C.GoString(singleUserToken),
 		C.GoString(dbConfigString),
+		C.GoString(configFilePath),
 	)
 }
 
 // StopServer stops the server
+//
 //export StopServer
 func StopServer() {
 	stopServer()
 }
 
-func startServer(webPath string, filesPath string, port int, singleUserToken, dbConfigString string) {
+func startServer(webPath string, filesPath string, port int, singleUserToken, dbConfigString, configFilePath string) {
 	if pServer != nil {
 		stopServer()
 		pServer = nil
 	}
 
 	// config.json file
-	config, err := config.ReadConfigFile()
+	config, err := config.ReadConfigFile(configFilePath)
 	if err != nil {
 		log.Fatal("Unable to read the config file: ", err)
 		return
@@ -229,7 +206,7 @@ func startServer(webPath string, filesPath string, port int, singleUserToken, db
 		return
 	}
 
-	logInfo(logger)
+	model.LogServerInfo(logger)
 
 	if len(filesPath) > 0 {
 		config.FilesPath = filesPath
@@ -247,16 +224,20 @@ func startServer(webPath string, filesPath string, port int, singleUserToken, db
 		config.DBConfigString = dbConfigString
 	}
 
-	db, err := server.NewStore(config, logger)
+	singleUser := len(singleUserToken) > 0
+	db, err := server.NewStore(config, singleUser, logger)
 	if err != nil {
 		logger.Fatal("server.NewStore ERROR", mlog.Err(err))
 	}
 
+	permissionsService := localpermissions.New(db, logger)
+
 	params := server.Params{
-		Cfg:             config,
-		SingleUserToken: singleUserToken,
-		DBStore:         db,
-		Logger:          logger,
+		Cfg:                config,
+		SingleUserToken:    singleUserToken,
+		DBStore:            db,
+		Logger:             logger,
+		PermissionsService: permissionsService,
 	}
 
 	pServer, err = server.New(params)
@@ -274,11 +255,16 @@ func stopServer() {
 		return
 	}
 
+	logger := pServer.Logger()
+
 	err := pServer.Shutdown()
 	if err != nil {
-		pServer.Logger().Error("server.Shutdown ERROR", mlog.Err(err))
+		logger.Error("server.Shutdown ERROR", mlog.Err(err))
 	}
-	_ = pServer.Logger().Shutdown()
+
+	if l, ok := logger.(*mlog.Logger); ok {
+		_ = l.Shutdown()
+	}
 	pServer = nil
 }
 

@@ -7,7 +7,9 @@ This folder is used to manage the website at [focalboard.com](https://www.focalb
 
 ## How to contribute
 
-You're welcome to submit pull requests for typos, minor corrects and additions, troubleshooting tips to install guides and other incremental improvements.
+The documentation for Focalboard (known as Boards in Mattermost) has moved to the [Mattermost Product Documentation](https://docs.mattermost.com/guides/boards.html) site.
+
+We welcome pull requests for typos, minor corrections, content additions, troubleshooting tips, install guides, and any other incremental improvements. If you have any questions about the contribution process, take a look at the [README](https://github.com/mattermost/docs/blob/master/README.md) file or join the [Documentation Working Group channel](https://community.mattermost.com/core/channels/dwg-documentation-working-group) on our Community server.
 
 For larger changes, such as adding an install guide for a different platform, please create a [feature request](https://github.com/mattermost/focalboard/issues/new?assignees=&labels=enhancement&template=enhancement.md&title=Feature+Request%3A+) ticket to discuss.
 
@@ -30,3 +32,10 @@ make run
 ```
 
 3. Go to http://localhost:1313 to see the running server
+
+## Production Notes
+
+### For Assets (stylesheets, scripts, images)
+
+If there are changes, please make sure that you change files names or update the version in the asset URL’s query string to help override the browser cache.
+The main stylesheet (styles.css) can change quite frequently, so to update the version across all pages, you can go into `layouts/partials/head.html` and adjust the `version` query param.

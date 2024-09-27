@@ -6,7 +6,7 @@ package notifylogger
 import (
 	"github.com/mattermost/focalboard/server/services/notify"
 
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
+	"github.com/mattermost/mattermost/server/public/shared/mlog"
 )
 
 const (
@@ -14,11 +14,11 @@ const (
 )
 
 type Backend struct {
-	logger *mlog.Logger
+	logger mlog.LoggerIFace
 	level  mlog.Level
 }
 
-func New(logger *mlog.Logger, level mlog.Level) *Backend {
+func New(logger mlog.LoggerIFace, level mlog.Level) *Backend {
 	return &Backend{
 		logger: logger,
 		level:  level,

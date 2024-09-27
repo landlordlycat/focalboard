@@ -1,14 +1,18 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import React from 'react'
+import React, {useMemo, useCallback} from 'react'
 import {FormattedMessage} from 'react-intl'
 
-import {Constants} from '../../constants'
+import {Constants, Permission} from '../../constants'
+import HiddenCardCount from '../../components/hiddenCardCount/hiddenCardCount'
+
 import {Card} from '../../blocks/card'
 import {Board, IPropertyTemplate} from '../../blocks/board'
 import {BoardView} from '../../blocks/boardView'
 import mutator from '../../mutator'
 import {Utils} from '../../utils'
+
+import BoardPermissionGate from '../permissions/boardPermissionGate'
 
 import './gallery.scss'
 import GalleryCard from './galleryCard'
@@ -21,14 +25,21 @@ type Props = {
     addCard: (show: boolean) => Promise<void>
     selectedCardIds: string[]
     onCardClicked: (e: React.MouseEvent, card: Card) => void
+    hiddenCardsCount: number
+    showHiddenCardCountNotification: (show: boolean) => void
 }
 
 const Gallery = (props: Props): JSX.Element => {
-    const {activeView, board, cards} = props
-    const visiblePropertyTemplates = board.fields.cardProperties.filter((template: IPropertyTemplate) => activeView.fields.visiblePropertyIds.includes(template.id))
+    const {activeView, board, cards, hiddenCardsCount} = props
+    const visiblePropertyTemplates = useMemo(() => {
+        return board.cardProperties.filter(
+            (template: IPropertyTemplate) => activeView.fields.visiblePropertyIds.includes(template.id),
+        )
+    }, [board.cardProperties, activeView.fields.visiblePropertyIds])
+
     const isManualSort = activeView.fields.sortOptions.length === 0
 
-    const onDropToCard = (srcCard: Card, dstCard: Card) => {
+    const onDropToCard = useCallback((srcCard: Card, dstCard: Card) => {
         Utils.log(`onDropToCard: ${dstCard.title}`)
         const {selectedCardIds} = props
 
@@ -46,15 +57,17 @@ const Gallery = (props: Props): JSX.Element => {
         cardOrder.splice(destIndex, 0, ...draggedCardIds)
 
         mutator.performAsUndoGroup(async () => {
-            await mutator.changeViewCardOrder(activeView, cardOrder, description)
+            await mutator.changeViewCardOrder(board.id, activeView.id, activeView.fields.cardOrder, cardOrder, description)
         })
-    }
+    }, [cards.map((o) => o.id).join(','), board.id, activeView.id, activeView.fields.cardOrder, props.selectedCardIds])
 
     const visibleTitle = activeView.fields.visiblePropertyIds.includes(Constants.titleColumnId)
+    const visibleBadges = activeView.fields.visiblePropertyIds.includes(Constants.badgesColumnId)
 
     return (
+
         <div className='Gallery'>
-            {cards.filter((c) => c.parentId === board.id).map((card) => {
+            {cards.filter((c) => c.boardId === board.id).map((card) => {
                 return (
                     <GalleryCard
                         key={card.id + card.updateAt}
@@ -63,6 +76,7 @@ const Gallery = (props: Props): JSX.Element => {
                         onClick={props.onCardClicked}
                         visiblePropertyTemplates={visiblePropertyTemplates}
                         visibleTitle={visibleTitle}
+                        visibleBadges={visibleBadges}
                         isSelected={props.selectedCardIds.includes(card.id)}
                         readonly={props.readonly}
                         onDrop={onDropToCard}
@@ -74,18 +88,27 @@ const Gallery = (props: Props): JSX.Element => {
             {/* Add New row */}
 
             {!props.readonly &&
-                <div
-                    className='octo-gallery-new'
-                    onClick={() => {
-                        props.addCard(true)
-                    }}
-                >
-                    <FormattedMessage
-                        id='TableComponent.plus-new'
-                        defaultMessage='+ New'
-                    />
-                </div>
+                <BoardPermissionGate permissions={[Permission.ManageBoardCards]}>
+                    <div
+                        className='octo-gallery-new'
+                        onClick={() => {
+                            props.addCard(true)
+                        }}
+                    >
+                        <FormattedMessage
+                            id='TableComponent.plus-new'
+                            defaultMessage='+ New'
+                        />
+                    </div>
+                </BoardPermissionGate>
             }
+            {hiddenCardsCount > 0 &&
+            <div className='gallery-hidden-cards'>
+                <HiddenCardCount
+                    hiddenCardsCount={hiddenCardsCount}
+                    showHiddenCardNotification={props.showHiddenCardCountNotification}
+                />
+            </div>}
         </div>
     )
 }

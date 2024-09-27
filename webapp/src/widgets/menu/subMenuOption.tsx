@@ -1,48 +1,75 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import React, {useState} from 'react'
+import React, {useEffect, useState, useContext, CSSProperties, useRef} from 'react'
 
-import SubmenuTriangleIcon from '../icons/submenuTriangle'
+import CompassIcon from '../../widgets/icons/compassIcon'
+
+import MenuUtil from './menuUtil'
 
 import Menu from '.'
 
 import './subMenuOption.scss'
 
+export const HoveringContext = React.createContext(false)
+
 type SubMenuOptionProps = {
-    id: string,
-    name: string,
-    position?: 'bottom' | 'top' | 'left' | 'left-bottom'
+    id: string
+    name: string
+    position?: 'bottom' | 'top' | 'left' | 'left-bottom' | 'auto'
     icon?: React.ReactNode
     children: React.ReactNode
+    className?: string
 }
 
 function SubMenuOption(props: SubMenuOptionProps): JSX.Element {
     const [isOpen, setIsOpen] = useState(false)
+    const isHovering = useContext(HoveringContext)
 
     const openLeftClass = props.position === 'left' || props.position === 'left-bottom' ? ' open-left' : ''
+
+    useEffect(() => {
+        if (isHovering !== undefined) {
+            setIsOpen(isHovering)
+        }
+    }, [isHovering])
+
+    const ref = useRef<HTMLDivElement>(null)
+
+    const styleRef = useRef<CSSProperties>({})
+
+    useEffect(() => {
+        const newStyle: CSSProperties = {}
+        if (props.position === 'auto' && ref.current) {
+            const openUp = MenuUtil.openUp(ref)
+            if (openUp.openUp) {
+                newStyle.bottom = 0
+            } else {
+                newStyle.top = 0
+            }
+        }
+
+        styleRef.current = newStyle
+    }, [ref.current])
 
     return (
         <div
             id={props.id}
-            className={`MenuOption SubMenuOption menu-option${openLeftClass}`}
-            onMouseEnter={() => {
-                setTimeout(() => {
-                    setIsOpen(true)
-                }, 50)
-            }}
-            onMouseLeave={() => setIsOpen(false)}
+            className={`MenuOption SubMenuOption menu-option${openLeftClass}${isOpen ? ' menu-option-active' : ''}${props.className ? ' ' + props.className : ''}`}
             onClick={(e: React.MouseEvent) => {
                 e.preventDefault()
                 e.stopPropagation()
-                setIsOpen(true)
+                setIsOpen((open) => !open)
             }}
+            ref={ref}
         >
-            {(props.position === 'left' || props.position === 'left-bottom') && <SubmenuTriangleIcon/>}
-            {props.icon ?? <div className='noicon'/>}
+            {props.icon ? <div className='menu-option__icon'>{props.icon}</div> : <div className='noicon'/>}
             <div className='menu-name'>{props.name}</div>
-            {props.position !== 'left' && props.position !== 'left-bottom' && <SubmenuTriangleIcon/>}
+            <CompassIcon icon='chevron-right'/>
             {isOpen &&
-                <div className={'SubMenu Menu noselect ' + (props.position || 'bottom')}>
+                <div
+                    className={'SubMenu Menu noselect ' + (props.position || 'bottom')}
+                    style={styleRef.current}
+                >
                     <div className='menu-contents'>
                         <div className='menu-options'>
                             {props.children}

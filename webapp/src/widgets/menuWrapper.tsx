@@ -1,38 +1,44 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useRef, useState, useEffect} from 'react'
+import React, {useRef, useState, useEffect, useCallback} from 'react'
 
 import './menuWrapper.scss'
 
 type Props = {
-    children?: React.ReactNode;
-    stopPropagationOnToggle?: boolean;
+    children?: React.ReactNode
+    stopPropagationOnToggle?: boolean
     className?: string
     disabled?: boolean
+    isOpen?: boolean
+    onToggle?: (open: boolean) => void
+    label?: string
 }
 
-const MenuWrapper = React.memo((props: Props) => {
+const MenuWrapper = (props: Props) => {
     const node = useRef<HTMLDivElement>(null)
-    const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(Boolean(props.isOpen))
 
     if (!Array.isArray(props.children) || props.children.length !== 2) {
         throw new Error('MenuWrapper needs exactly 2 children')
     }
 
-    const close = (): void => {
-        setOpen(false)
-    }
+    const close = useCallback((): void => {
+        if (open) {
+            setOpen(false)
+            props.onToggle && props.onToggle(false)
+        }
+    }, [props.onToggle, open])
 
-    const closeOnBlur = (e: Event) => {
+    const closeOnBlur = useCallback((e: Event) => {
         if (e.target && node.current?.contains(e.target as Node)) {
             return
         }
 
         close()
-    }
+    }, [close])
 
-    const keyboardClose = (e: KeyboardEvent) => {
+    const keyboardClose = useCallback((e: KeyboardEvent) => {
         if (e.key === 'Escape') {
             close()
         }
@@ -40,9 +46,9 @@ const MenuWrapper = React.memo((props: Props) => {
         if (e.key === 'Tab') {
             closeOnBlur(e)
         }
-    }
+    }, [close, closeOnBlur])
 
-    const toggle = (e: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
+    const toggle = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
         if (props.disabled) {
             return
         }
@@ -58,23 +64,31 @@ const MenuWrapper = React.memo((props: Props) => {
             e.stopPropagation()
         }
         setOpen(!open)
-    }
+        props.onToggle && props.onToggle(!open)
+    }, [props.onToggle, open, props.disabled])
 
     useEffect(() => {
-        document.addEventListener('menuItemClicked', close, true)
-        document.addEventListener('click', closeOnBlur, true)
-        document.addEventListener('keyup', keyboardClose, true)
-        return () => {
-            document.removeEventListener('menuItemClicked', close, true)
-            document.removeEventListener('click', closeOnBlur, true)
-            document.removeEventListener('keyup', keyboardClose, true)
+        if (open) {
+            document.addEventListener('menuItemClicked', close, true)
+            document.addEventListener('click', closeOnBlur, true)
+            document.addEventListener('keyup', keyboardClose, true)
         }
-    }, [])
+        return () => {
+            if (open) {
+                document.removeEventListener('menuItemClicked', close, true)
+                document.removeEventListener('click', closeOnBlur, true)
+                document.removeEventListener('keyup', keyboardClose, true)
+            }
+        }
+    }, [open, close, closeOnBlur, keyboardClose])
 
     const {children} = props
     let className = 'MenuWrapper'
     if (props.disabled) {
         className += ' disabled'
+    }
+    if (open) {
+        className += ' override menuOpened'
     }
     if (props.className) {
         className += ' ' + props.className
@@ -83,7 +97,7 @@ const MenuWrapper = React.memo((props: Props) => {
     return (
         <div
             role='button'
-            aria-label='menuwrapper'
+            aria-label={props.label || 'menuwrapper'}
             className={className}
             onClick={toggle}
             ref={node}
@@ -92,6 +106,6 @@ const MenuWrapper = React.memo((props: Props) => {
             {children && !props.disabled && open ? Object.values(children)[1] : null}
         </div>
     )
-})
+}
 
-export default MenuWrapper
+export default React.memo(MenuWrapper)

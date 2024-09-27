@@ -1,4 +1,6 @@
 @import 'typography';
+@import 'modifiers';
+@import 'z-index';
 
 html {
     height: 100%;
@@ -38,6 +40,10 @@ html {
         user-select: none;
     }
 
+    .TeamIcon {
+        box-sizing: content-box;
+    }
+
     input,
     textarea,
     select,
@@ -49,21 +55,13 @@ html {
     textarea {
         background: rgb(var(--center-channel-bg-rgb));
         color: rgb(var(--center-channel-color-rgb));
-
+        border-radius: 4px;
         user-select: text;
     }
 
     a {
         text-decoration: none;
-        color: var(--link-color-rgb);
-
-        &:visited {
-            color: var(--link-visited-color-rgb);
-        }
-
-        &:hover {
-            background-color: rgba(192, 192, 255, 0.2);
-        }
+        color: rgb(var(--link-color-rgb));
     }
 
     hr {
@@ -104,7 +102,7 @@ html {
         flex: 1 1 auto;
         display: flex;
         flex-direction: column;
-        overflow: auto;
+        overflow: hidden;
     }
 
     /* Main app */
@@ -125,6 +123,11 @@ html {
         line-height: 1.2;
         align-self: baseline;
         overflow: visible;
+        font-weight: normal;
+    }
+
+    .text-light {
+        color: rgba(var(--center-channel-color-rgb), 0.56);
     }
 
     .octo-icontitle {
@@ -138,6 +141,7 @@ html {
     /*-- Property list --*/
 
     .octo-propertyvalue {
+        max-width: 100%;
         font-size: 12px;
         color: rgb(var(--center-channel-color-rgb));
 
@@ -206,8 +210,8 @@ html {
         width: 100%;
 
         &:hover {
+            @include z-index(block-hover);
             position: relative;
-            z-index: 1;
         }
 
         > * {
@@ -232,5 +236,10 @@ html {
         @media not screen and (max-width: 975px) {
             width: 48px;
         }
+    }
+
+    .emoji-mart-category-list {
+        display: flex;
+        flex-wrap: wrap;
     }
 }

@@ -5,9 +5,8 @@
     flex-direction: column;
     align-items: flex-start;
     overflow-wrap: anywhere;
-
-    border-radius: 3px;
-    margin-bottom: 10px;
+    border-radius: 4px;
+    margin-bottom: 16px;
     padding: 12px 16px;
     box-shadow: rgba(var(--center-channel-color-rgb), 0.1) 0 0 0 1px,
         rgba(var(--center-channel-color-rgb), 0.1) 0 2px 4px;
@@ -18,7 +17,7 @@
     transition: background 100ms ease-out 0s;
 
     &:hover {
-        background-color: rgba(var(--center-channel-color-rgb), 0.1);
+        background-color: rgba(var(--center-channel-color-rgb), 0.08);
 
         .optionsMenu {
             display: block;
@@ -30,9 +29,14 @@
     }
 
     .optionsMenu {
+        background: rgb(var(--center-channel-bg-rgb));
         display: none;
         position: absolute;
-        right: 0;
+        right: 12px;
+
+        &.show {
+            display: block;
+        }
     }
 
     .octo-tooltip {
@@ -60,18 +64,21 @@
 
         .octo-icon {
             font-size: 16px;
-            margin-right: 8px;
+            margin-right: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
         }
-    }
 
-    .IconButton {
-        border-radius: 3px;
-        margin-right: 6px;
-        padding: 0;
-        background: rgb(var(--center-channel-color-rgb), 0.1);
-        box-shadow: rgba(var(--center-channel-color-rgb), 0.1) 0 0 0 1px,
-            rgba(var(--center-channel-color-rgb), 0.1) 0 2px 4px;
-        height: 24px;
-        width: 24px;
+        .octo-titletext {
+            display: -webkit-box; // stylelint-disable-line
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-height: 100px;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical; // stylelint-disable-line
+        }
     }
 }

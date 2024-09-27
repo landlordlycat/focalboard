@@ -5,35 +5,33 @@ import {CSSObject} from '@emotion/serialize'
 import isEqual from 'lodash/isEqual'
 import color from 'color'
 
-import {Utils} from './utils'
-
 let activeThemeName: string
 
 import {UserSettings} from './userSettings'
 
 export type Theme = {
-    mainBg: string,
-    mainFg: string,
-    buttonBg: string,
-    buttonFg: string,
-    sidebarBg: string,
-    sidebarFg: string,
-    sidebarTextActiveBorder: string,
-    sidebarWhiteLogo: string,
+    mainBg: string
+    mainFg: string
+    buttonBg: string
+    buttonFg: string
+    sidebarBg: string
+    sidebarFg: string
+    sidebarTextActiveBorder: string
+    sidebarWhiteLogo: string
 
-    link: string,
-    linkVisited: string,
+    link: string
+    linkVisited: string
 
-    propDefault: string,
-    propGray: string,
-    propBrown: string,
-    propOrange: string,
-    propYellow: string,
-    propGreen: string,
-    propBlue: string,
-    propPurple: string,
-    propPink: string,
-    propRed: string,
+    propDefault: string
+    propGray: string
+    propBrown: string
+    propOrange: string
+    propYellow: string
+    propGreen: string
+    propBlue: string
+    propPurple: string
+    propPink: string
+    propRed: string
 }
 
 export const systemThemeName = 'system-theme'
@@ -47,10 +45,10 @@ export const defaultTheme = {
     buttonFg: '255, 255, 255',
     sidebarBg: '30, 50, 92',
     sidebarFg: '255, 255, 255',
-    sidebarTextActiveBorder: '#5d89ea',
+    sidebarTextActiveBorder: '93, 137, 243',
     sidebarWhiteLogo: 'true',
 
-    link: '#0000ee',
+    link: '93, 137, 234',
     linkVisited: '#551a8b',
 
     propDefault: '#fff',
@@ -76,7 +74,7 @@ export const darkTheme = {
     buttonFg: '255, 255, 255',
     sidebarBg: '75, 73, 67',
     sidebarFg: '255, 255, 255',
-    sidebarTextActiveBorder: '#66b9a7',
+    sidebarTextActiveBorder: '102, 185, 167',
     sidebarWhiteLogo: 'true',
 
     link: '#0090ff',
@@ -105,7 +103,7 @@ export const lightTheme = {
     buttonFg: '255, 255, 255',
     sidebarBg: '247, 246, 243',
     sidebarFg: '55, 53, 47',
-    sidebarTextActiveBorder: '#579eff',
+    sidebarTextActiveBorder: '87, 158, 255',
     sidebarWhiteLogo: 'false',
 }
 
@@ -124,38 +122,19 @@ export function setTheme(theme: Theme | null): Theme {
 
     setActiveThemeName(consolidatedTheme, theme)
 
-    if (!Utils.isFocalboardPlugin()) {
-        document.documentElement.style.setProperty('--center-channel-bg-rgb', consolidatedTheme.mainBg)
-        document.documentElement.style.setProperty('--center-channel-color-rgb', consolidatedTheme.mainFg)
-        document.documentElement.style.setProperty('--button-bg-rgb', consolidatedTheme.buttonBg)
-        document.documentElement.style.setProperty('--button-color-rgb', consolidatedTheme.buttonFg)
-        document.documentElement.style.setProperty('--sidebar-bg-rgb', consolidatedTheme.sidebarBg)
-        document.documentElement.style.setProperty('--sidebar-text-rgb', consolidatedTheme.sidebarFg)
-        document.documentElement.style.setProperty('--link-color-rgb', consolidatedTheme.link)
-        document.documentElement.style.setProperty('--sidebar-text-active-border', consolidatedTheme.sidebarTextActiveBorder)
-    }
+    // for personal server and desktop, Focalboard is responsible for managing the theme,
+    // so we set all the color variables here.
+    document.documentElement.style.setProperty('--center-channel-bg-rgb', consolidatedTheme.mainBg)
+    document.documentElement.style.setProperty('--center-channel-color-rgb', consolidatedTheme.mainFg)
+    document.documentElement.style.setProperty('--button-bg-rgb', consolidatedTheme.buttonBg)
+    document.documentElement.style.setProperty('--button-color-rgb', consolidatedTheme.buttonFg)
+    document.documentElement.style.setProperty('--sidebar-bg-rgb', consolidatedTheme.sidebarBg)
+    document.documentElement.style.setProperty('--sidebar-text-rgb', consolidatedTheme.sidebarFg)
+    document.documentElement.style.setProperty('--link-color-rgb', consolidatedTheme.link)
+    document.documentElement.style.setProperty('--sidebar-text-active-border-rgb', consolidatedTheme.sidebarTextActiveBorder)
 
     document.documentElement.style.setProperty('--sidebar-white-logo', consolidatedTheme.sidebarWhiteLogo)
     document.documentElement.style.setProperty('--link-visited-color-rgb', consolidatedTheme.linkVisited)
-
-    const mainBgColor = color(`rgb(${getComputedStyle(document.documentElement).getPropertyValue('--center-channel-bg-rgb')})`)
-
-    if (Utils.isFocalboardPlugin()) {
-        let fixedTheme = lightTheme
-        if (mainBgColor.isDark()) {
-            fixedTheme = darkTheme
-        }
-        consolidatedTheme.propDefault = fixedTheme.propDefault
-        consolidatedTheme.propGray = fixedTheme.propGray
-        consolidatedTheme.propBrown = fixedTheme.propBrown
-        consolidatedTheme.propOrange = fixedTheme.propOrange
-        consolidatedTheme.propYellow = fixedTheme.propYellow
-        consolidatedTheme.propGreen = fixedTheme.propGreen
-        consolidatedTheme.propBlue = fixedTheme.propBlue
-        consolidatedTheme.propPurple = fixedTheme.propPurple
-        consolidatedTheme.propPink = fixedTheme.propPink
-        consolidatedTheme.propRed = fixedTheme.propRed
-    }
 
     document.documentElement.style.setProperty('--prop-default', consolidatedTheme.propDefault)
     document.documentElement.style.setProperty('--prop-gray', consolidatedTheme.propGray)
@@ -183,7 +162,7 @@ export function setMattermostTheme(theme: any): Theme {
     document.documentElement.style.setProperty('--sidebar-bg-rgb', color(theme.sidebarBg).rgb().array().join(', '))
     document.documentElement.style.setProperty('--sidebar-text-rgb', color(theme.sidebarText).rgb().array().join(', '))
     document.documentElement.style.setProperty('--link-color-rgb', theme.linkColor)
-    document.documentElement.style.setProperty('--sidebar-text-active-border', color(theme.sidebarTextActiveBorder).rgb().array().join(', '))
+    document.documentElement.style.setProperty('--sidebar-text-active-border-rgb', color(theme.sidebarTextActiveBorder).rgb().array().join(', '))
 
     return setTheme({
         ...defaultTheme,

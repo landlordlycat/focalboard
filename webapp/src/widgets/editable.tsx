@@ -27,16 +27,16 @@ export type Focusable = {
 export type ElementType = HTMLInputElement | HTMLTextAreaElement
 
 export type ElementProps = {
-    className: string,
-    placeholder?: string,
-    onChange: (e: React.ChangeEvent<ElementType>) => void,
-    value?: string,
-    title?: string,
-    onBlur: () => void,
-    onKeyDown: (e: React.KeyboardEvent<ElementType>) => void,
-    readOnly?: boolean,
-    spellCheck?: boolean,
-    onFocus?: () => void,
+    className: string
+    placeholder?: string
+    onChange: (e: React.ChangeEvent<HTMLTextAreaElement|HTMLInputElement>) => void
+    value?: string
+    title?: string
+    onBlur: () => void
+    onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement|HTMLInputElement>) => void
+    readOnly?: boolean
+    spellCheck?: boolean
+    onFocus?: () => void
 }
 
 export function useEditable(
@@ -87,7 +87,7 @@ export function useEditable(
         error = !props.validator(value || '')
     }
     return {
-        className: 'Editable ' + (error ? 'error ' : '') + (readonly ? 'readonly ' : '') + className,
+        className: 'Editable ' + (error ? 'error ' : '') + (readonly ? 'readonly ' : '') + (className || ''),
         placeholder: placeholderText,
         onChange: (e: React.ChangeEvent<ElementType>) => {
             onChange(e.target.value)
@@ -95,7 +95,7 @@ export function useEditable(
         value,
         title: value,
         onBlur: () => save('onBlur'),
-        onKeyDown: (e: React.KeyboardEvent<ElementType>): void => {
+        onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement|HTMLInputElement>): void => {
             if (e.keyCode === 27 && !(e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) { // ESC
                 e.preventDefault()
                 if (props.saveOnEsc) {
@@ -116,13 +116,6 @@ export function useEditable(
     }
 }
 
-function borderWidth(style: CSSStyleDeclaration): number {
-    return (
-        parseInt(style.borderLeftWidth || '0', 10) +
-        parseInt(style.borderRightWidth || '0', 10)
-    )
-}
-
 const Editable = (props: EditableProps, ref: React.Ref<Focusable>): JSX.Element => {
     const elementRef = useRef<HTMLInputElement>(null)
     const elementProps = useEditable(props, ref, elementRef)
@@ -130,9 +123,7 @@ const Editable = (props: EditableProps, ref: React.Ref<Focusable>): JSX.Element 
     useLayoutEffect(() => {
         if (props.autoExpand && elementRef.current) {
             const input = elementRef.current
-            const computed = getComputedStyle(input)
-            input.style.width = 'auto'
-            input.style.width = `${input.scrollWidth + borderWidth(computed) + 1}px`
+            input.style.width = '100%'
         }
     })
 

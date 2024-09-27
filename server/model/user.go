@@ -5,6 +5,13 @@ import (
 	"io"
 )
 
+const (
+	SingleUser                    = "single-user"
+	GlobalTeamID                  = "0"
+	SystemUserID                  = "system"
+	PreferencesCategoryFocalboard = "focalboard"
+)
+
 // User is a user
 // swagger:model
 type User struct {
@@ -18,7 +25,14 @@ type User struct {
 
 	// The user's email
 	// required: true
-	Email string `json:"email"`
+	Email string `json:"-"`
+
+	// The user's nickname
+	Nickname string `json:"nickname"`
+	// The user's first name
+	FirstName string `json:"firstname"`
+	// The user's last name
+	LastName string `json:"lastname"`
 
 	// swagger:ignore
 	Password string `json:"-"`
@@ -32,21 +46,42 @@ type User struct {
 	// swagger:ignore
 	AuthData string `json:"-"`
 
-	// User settings
-	// required: true
-	Props map[string]interface{} `json:"props"`
-
-	// Created time
+	// Created time in miliseconds since the current epoch
 	// required: true
 	CreateAt int64 `json:"create_at,omitempty"`
 
-	// Updated time
+	// Updated time in miliseconds since the current epoch
 	// required: true
 	UpdateAt int64 `json:"update_at,omitempty"`
 
-	// Deleted time, set to indicate user is deleted
+	// Deleted time in miliseconds since the current epoch, set to indicate user is deleted
 	// required: true
 	DeleteAt int64 `json:"delete_at"`
+
+	// If the user is a bot or not
+	// required: true
+	IsBot bool `json:"is_bot"`
+
+	// If the user is a guest or not
+	// required: true
+	IsGuest bool `json:"is_guest"`
+
+	// Special Permissions the user may have
+	Permissions []string `json:"permissions,omitempty"`
+
+	Roles string `json:"roles"`
+}
+
+// UserPreferencesPatch is a user property patch
+// swagger:model
+type UserPreferencesPatch struct {
+	// The user preference updated fields
+	// required: false
+	UpdatedFields map[string]string `json:"updatedFields"`
+
+	// The user preference removed fields
+	// required: false
+	DeletedFields []string `json:"deletedFields"`
 }
 
 type Session struct {
@@ -65,4 +100,17 @@ func UserFromJSON(data io.Reader) (*User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (u *User) Sanitize(options map[string]bool) {
+	u.Password = ""
+	u.MfaSecret = ""
+
+	if len(options) != 0 && !options["email"] {
+		u.Email = ""
+	}
+	if len(options) != 0 && !options["fullname"] {
+		u.FirstName = ""
+		u.LastName = ""
+	}
 }

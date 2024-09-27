@@ -22,16 +22,17 @@ type Props = {
     editCardTemplate: (cardTemplateId: string) => void
 }
 
-const NewCardButton = React.memo((props: Props): JSX.Element => {
+const NewCardButton = (props: Props): JSX.Element => {
     const cardTemplates: Card[] = useAppSelector(getCurrentBoardTemplates)
     const currentView = useAppSelector(getCurrentView)
+    let defaultTemplateID = ''
     const intl = useIntl()
 
     return (
         <ButtonWithMenu
             onClick={() => {
-                if (currentView.fields.defaultTemplateId) {
-                    props.addCardFromTemplate(currentView.fields.defaultTemplateId)
+                if (defaultTemplateID) {
+                    props.addCardFromTemplate(defaultTemplateID)
                 } else {
                     props.addCard()
                 }
@@ -57,14 +58,19 @@ const NewCardButton = React.memo((props: Props): JSX.Element => {
                     <Menu.Separator/>
                 </>}
 
-                {cardTemplates.map((cardTemplate) => (
-                    <NewCardButtonTemplateItem
-                        key={cardTemplate.id}
-                        cardTemplate={cardTemplate}
-                        addCardFromTemplate={props.addCardFromTemplate}
-                        editCardTemplate={props.editCardTemplate}
-                    />
-                ))}
+                {cardTemplates.map((cardTemplate) => {
+                    if (cardTemplate.id === currentView.fields.defaultTemplateId) {
+                        defaultTemplateID = currentView.fields.defaultTemplateId
+                    }
+                    return (
+                        <NewCardButtonTemplateItem
+                            key={cardTemplate.id}
+                            cardTemplate={cardTemplate}
+                            addCardFromTemplate={props.addCardFromTemplate}
+                            editCardTemplate={props.editCardTemplate}
+                        />
+                    )
+                })}
 
                 <EmptyCardButton
                     addCard={props.addCard}
@@ -79,6 +85,6 @@ const NewCardButton = React.memo((props: Props): JSX.Element => {
             </Menu>
         </ButtonWithMenu>
     )
-})
+}
 
-export default NewCardButton
+export default React.memo(NewCardButton)

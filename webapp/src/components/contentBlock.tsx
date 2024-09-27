@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react'
+import React, {useState} from 'react'
 import {useIntl} from 'react-intl'
 
 import {Card} from '../blocks/card'
@@ -23,6 +23,7 @@ import {Position} from '../components/cardDetail/cardDetailContents'
 import ContentElement from './content/contentElement'
 import AddContentMenuItem from './addContentMenuItem'
 import {contentRegistry} from './content/contentRegistry'
+
 import './contentBlock.scss'
 
 type Props = {
@@ -34,12 +35,13 @@ type Props = {
     cords: {x: number, y?: number, z?: number}
 }
 
-const ContentBlock = React.memo((props: Props): JSX.Element => {
+const ContentBlock = (props: Props): JSX.Element => {
     const {card, block, readonly, cords} = props
     const intl = useIntl()
     const [, , gripRef, itemRef] = useSortableWithGrip('content', {block, cords}, true, () => {})
     const [, isOver2,, itemRef2] = useSortableWithGrip('content', {block, cords}, true, (src, dst) => props.onDrop(src, dst, 'right'))
     const [, isOver3,, itemRef3] = useSortableWithGrip('content', {block, cords}, true, (src, dst) => props.onDrop(src, dst, 'left'))
+    const [menuOpened, setMenuOpened] = useState(false)
 
     const index = cords.x
     const colIndex = (cords.y || cords.y === 0) && cords.y > -1 ? cords.y : -1
@@ -54,7 +56,11 @@ const ContentBlock = React.memo((props: Props): JSX.Element => {
         }
     }
 
-    const className = 'ContentBlock octo-block'
+    let className = 'ContentBlock octo-block'
+    if (menuOpened) {
+        className += ' menuOpened'
+    }
+
     return (
         <div
             className='rowContents'
@@ -66,7 +72,7 @@ const ContentBlock = React.memo((props: Props): JSX.Element => {
             >
                 <div className='octo-block-margin'>
                     {!props.readonly &&
-                    <MenuWrapper>
+                    <MenuWrapper onToggle={setMenuOpened}>
                         <IconButton icon={<OptionsIcon/>}/>
                         <Menu>
                             {index > 0 &&
@@ -76,7 +82,7 @@ const ContentBlock = React.memo((props: Props): JSX.Element => {
                                     icon={<SortUpIcon/>}
                                     onClick={() => {
                                         Utils.arrayMove(contentOrder, index, index - 1)
-                                        mutator.changeCardContentOrder(card.id, card.fields.contentOrder, contentOrder)
+                                        mutator.changeCardContentOrder(props.card.boardId, card.id, card.fields.contentOrder, contentOrder)
                                     }}
                                 />}
                             {index < (contentOrder.length - 1) &&
@@ -86,13 +92,14 @@ const ContentBlock = React.memo((props: Props): JSX.Element => {
                                     icon={<SortDownIcon/>}
                                     onClick={() => {
                                         Utils.arrayMove(contentOrder, index, index + 1)
-                                        mutator.changeCardContentOrder(card.id, card.fields.contentOrder, contentOrder)
+                                        mutator.changeCardContentOrder(props.card.boardId, card.id, card.fields.contentOrder, contentOrder)
                                     }}
                                 />}
                             <Menu.SubMenu
                                 id='insertAbove'
                                 name={intl.formatMessage({id: 'ContentBlock.insertAbove', defaultMessage: 'Insert above'})}
                                 icon={<AddIcon/>}
+                                position='top'
                             >
                                 {contentRegistry.contentTypes.map((type) => (
                                     <AddContentMenuItem
@@ -123,7 +130,7 @@ const ContentBlock = React.memo((props: Props): JSX.Element => {
 
                                     mutator.performAsUndoGroup(async () => {
                                         await mutator.deleteBlock(block, description)
-                                        await mutator.changeCardContentOrder(card.id, card.fields.contentOrder, contentOrder, description)
+                                        await mutator.changeCardContentOrder(props.card.boardId, card.id, card.fields.contentOrder, contentOrder, description)
                                     })
                                 }}
                             />
@@ -149,6 +156,7 @@ const ContentBlock = React.memo((props: Props): JSX.Element => {
                 <ContentElement
                     block={block}
                     readonly={readonly}
+                    cords={cords}
                 />
             </div>
             <div
@@ -157,6 +165,6 @@ const ContentBlock = React.memo((props: Props): JSX.Element => {
             />
         </div>
     )
-})
+}
 
-export default ContentBlock
+export default React.memo(ContentBlock)

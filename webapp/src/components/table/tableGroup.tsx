@@ -18,7 +18,6 @@ type Props = {
     groupByProperty?: IPropertyTemplate
     group: BoardGroup
     readonly: boolean
-    columnRefs: Map<string, React.RefObject<HTMLDivElement>>
     selectedCardIds: string[]
     cardIdToFocusOnRender: string
     hideGroup: (groupByOptionId: string) => void
@@ -31,7 +30,7 @@ type Props = {
     onDropToGroup: (srcCard: Card, groupID: string, dstCardID: string) => void
 }
 
-const TableGroup = React.memo((props: Props): JSX.Element => {
+const TableGroup = (props: Props): JSX.Element => {
     const {board, activeView, group, onDropToGroup, groupByProperty} = props
     const groupId = group.option.id
 
@@ -74,7 +73,6 @@ const TableGroup = React.memo((props: Props): JSX.Element => {
             <TableRows
                 board={board}
                 activeView={activeView}
-                columnRefs={props.columnRefs}
                 cards={group.cards}
                 selectedCardIds={props.selectedCardIds}
                 readonly={props.readonly}
@@ -86,6 +84,6 @@ const TableGroup = React.memo((props: Props): JSX.Element => {
             />}
         </div>
     )
-})
+}
 
-export default TableGroup
+export default React.memo(TableGroup)

@@ -3,10 +3,16 @@
 
 package notifymentions
 
-import "github.com/mattermost/focalboard/server/services/notify"
+import (
+	"github.com/mattermost/focalboard/server/services/notify"
 
-// Delivery provides an interface for delivering notifications to other systems, such as
-// MM server or email.
-type Delivery interface {
-	Deliver(mentionUsername string, extract string, evt notify.BlockChangeEvent) error
+	mm_model "github.com/mattermost/mattermost/server/public/model"
+)
+
+// MentionDelivery provides an interface for delivering @mention notifications to other systems, such as
+// channels server via plugin API.
+// On success the user id of the user mentioned is returned.
+type MentionDelivery interface {
+	MentionDeliver(mentionedUser *mm_model.User, extract string, evt notify.BlockChangeEvent) (string, error)
+	UserByUsername(mentionUsername string) (*mm_model.User, error)
 }

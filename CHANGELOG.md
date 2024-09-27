@@ -4,7 +4,47 @@ Focalboard is an open source, self-hosted alternative to Trello, Notion, Asana a
 
 This changelog summarizes updates to our open source project. You can also find the [latest releases and release notes on GitHub here](https://github.com/mattermost/focalboard/releases).
 
-## [Work In Progress] - vNext Release - [Date TBD]
+## v0.15 Release - March, 2022
+* Onboarding tour. Thanks @harshilsharma63! @jespino!
+* Channel intro link to Boards. Thanks @sbishel!
+* Improved share board UI. Thanks @sbishel!
+* New error pages. Thanks @wiggin77! @asaadmahmood!
+* In-app links to import Help Docs. Thanks @justinegeffen! @sbishel!
+* Toggle to hide empty groups for TableView. Thanks @vish9812!
+* Removed transactions from sqlite backend to prevent locking issues. Thanks @jespino!
+* Update readme with accurate Linux standalone app build instructions. Thanks @wiggin77!
+* Change wrapping in React.memo. Thanks @kamre!
+* Don't use property value for key construction. Thanks @kamre!
+* Updated comment box alignment. Thanks @asaadmahmood!
+* Show "(Deleted User)" instead of UUID when user not found. Thanks @akkivasu!
+
+## v0.14 Release - February, 2022
+* Template selector dialog. Thanks @jespino!
+* New standard templates. Thanks @wiggin77!
+* Archive file format has changed and now supports images. Thanks @wiggin77!
+* Card badges. Thanks @kamre!
+* URL property improvement. Thanks @kamre!
+* GIF support in card descriptions. Thanks @asaadmahmood!
+* Add links to linode. Thanks @ChaseKnowlden!
+* Add `chown` for nobody in the docker run example. Thanks @K3UL!
+* Fixed Mac M1 chip build. Thanks @jpaldeano!
+* Removed link to deleted css file. Thanks @kamre!
+* Fixed typo in config.toml. Thanks @krmh04!
+
+## v0.12 Release - January, 2022
+* Change notifications. Thanks @wiggin77!
+* Person avatars. Thanks @asaadmahmood!
+* Updated comment sort order. Thanks @asaadmahmood!
+
+## v0.11 Release - December, 2021
+* Calendar view. Thanks @sbishel!
+* `@mention` autocomplete. Thanks @hahmadia!
+
+## v0.10 Release - November, 2021
+* @mention notifications. Thanks @wiggin77!
+* Board calculations. Thanks @harshilsharma63!
+* Unfurl card previews in posts. Thanks @hahmadia!
+* Plus many, many contributions from Hacktoberfest and beyond, including from: @jufab, @kamre, @Johennes, @nishantwrp, @tiago154, @DeeJayBro, @CuriousCorrelation, @prakharporwal, @donno2048, @anchepiece, @puerco, @adithyaakrishna, @JenyaFTW, @ivernus, @grsky360, @b4sen, @naresh1205, @JtheBAB, @ssensalo, @berkeka, @yedamao, @Prassud, @NakulChauhan2001, @achie27, @crspeller, @sahil9001, @alauregaillard, @igordsm, @rafaeelaudibert, @kaakaa, @Sayanta66, @Bhavin789, @Shahzayb, @kayazeren, @fcoiuri, @tsabi, @DeviousLab, @leosunmo, @xMicky24GIT, @majidsajadi, @marcvelasco, and @aloks98. Sorry if we missed anyone in this list!
 
 ## v0.9 Release - August, 2021
 * New date range property type. Thanks @sbishel!

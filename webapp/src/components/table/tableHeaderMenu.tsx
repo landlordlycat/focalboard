@@ -27,21 +27,22 @@ const TableHeaderMenu: FC<Props> = (props: Props): JSX.Element => {
             <Menu.Text
                 id='sortAscending'
                 name={intl.formatMessage({id: 'TableHeaderMenu.sort-ascending', defaultMessage: 'Sort ascending'})}
-                onClick={() => mutator.changeViewSortOptions(activeView.id, activeView.fields.sortOptions, [{propertyId: templateId, reversed: false}])}
+                onClick={() => mutator.changeViewSortOptions(board.id, activeView.id, activeView.fields.sortOptions, [{propertyId: templateId, reversed: false}])}
             />
             <Menu.Text
                 id='sortDescending'
                 name={intl.formatMessage({id: 'TableHeaderMenu.sort-descending', defaultMessage: 'Sort descending'})}
-                onClick={() => mutator.changeViewSortOptions(activeView.id, activeView.fields.sortOptions, [{propertyId: templateId, reversed: true}])}
+                onClick={() => mutator.changeViewSortOptions(board.id, activeView.id, activeView.fields.sortOptions, [{propertyId: templateId, reversed: true}])}
             />
             <Menu.Text
                 id='insertLeft'
                 name={intl.formatMessage({id: 'TableHeaderMenu.insert-left', defaultMessage: 'Insert left'})}
                 onClick={() => {
                     if (props.templateId === Constants.titleColumnId) {
+                        // eslint-disable-next-line no-warning-comments
                         // TODO: Handle name column
                     } else {
-                        const index = board.fields.cardProperties.findIndex((o: IPropertyTemplate) => o.id === templateId)
+                        const index = board.cardProperties.findIndex((o: IPropertyTemplate) => o.id === templateId)
                         mutator.insertPropertyTemplate(board, activeView, index)
                     }
                 }}
@@ -51,9 +52,10 @@ const TableHeaderMenu: FC<Props> = (props: Props): JSX.Element => {
                 name={intl.formatMessage({id: 'TableHeaderMenu.insert-right', defaultMessage: 'Insert right'})}
                 onClick={() => {
                     if (templateId === Constants.titleColumnId) {
+                        // eslint-disable-next-line no-warning-comments
                         // TODO: Handle title column
                     } else {
-                        const index = board.fields.cardProperties.findIndex((o: IPropertyTemplate) => o.id === templateId) + 1
+                        const index = board.cardProperties.findIndex((o: IPropertyTemplate) => o.id === templateId) + 1
                         mutator.insertPropertyTemplate(board, activeView, index)
                     }
                 }}
@@ -63,7 +65,7 @@ const TableHeaderMenu: FC<Props> = (props: Props): JSX.Element => {
                     <Menu.Text
                         id='hide'
                         name={intl.formatMessage({id: 'TableHeaderMenu.hide', defaultMessage: 'Hide'})}
-                        onClick={() => mutator.changeViewVisibleProperties(activeView.id, activeView.fields.visiblePropertyIds, activeView.fields.visiblePropertyIds.filter((o: string) => o !== templateId))}
+                        onClick={() => mutator.changeViewVisibleProperties(board.id, activeView.id, activeView.fields.visiblePropertyIds, activeView.fields.visiblePropertyIds.filter((o: string) => o !== templateId))}
                     />
                     <Menu.Text
                         id='duplicate'

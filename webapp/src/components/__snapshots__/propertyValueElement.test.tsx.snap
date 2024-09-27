@@ -1,12 +1,62 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`components/propertyValueElement Generic fields should allow cancel 1`] = `
+<div>
+  <input
+    class="Editable octo-propertyvalue"
+    placeholder="Empty"
+    spellcheck="true"
+    style="width: 100%;"
+    title=""
+    value=""
+  />
+</div>
+`;
+
+exports[`components/propertyValueElement URL fields should allow cancel 1`] = `
+<div>
+  <div
+    class="URLProperty octo-propertyvalue"
+  >
+    <a
+      class="link"
+      href="http://localhost"
+      rel="noreferrer"
+      target="_blank"
+    >
+      http://localhost
+    </a>
+    <button
+      aria-label="Edit"
+      class="IconButton Button_Edit"
+      title="Edit"
+      type="button"
+    >
+      <i
+        class="CompassIcon icon-pencil-outline EditIcon"
+      />
+    </button>
+    <button
+      aria-label="Copy"
+      class="IconButton Button_Copy"
+      title="Copy"
+      type="button"
+    >
+      <i
+        class="CompassIcon icon-content-copy content-copy"
+      />
+    </button>
+  </div>
+</div>
+`;
+
 exports[`components/propertyValueElement should match snapshot, date, array value 1`] = `
 <div>
   <div
     class="DateRange empty octo-propertyvalue"
   >
     <button
-      class="Button    "
+      class="Button"
       type="button"
     >
       <span>
@@ -44,7 +94,7 @@ exports[`components/propertyValueElement should match snapshot, person, array va
     class="Editable octo-propertyvalue"
     placeholder="Empty"
     spellcheck="true"
-    style="width: 5px;"
+    style="width: 100%;"
     title=""
     value=""
   />
@@ -74,7 +124,7 @@ exports[`components/propertyValueElement should match snapshot, select 1`] = `
 exports[`components/propertyValueElement should match snapshot, select, read-only 1`] = `
 <div>
   <div
-    class="octo-propertyvalue"
+    class="octo-propertyvalue octo-propertyvalue--readonly"
     data-testid="select-non-editable"
     tabindex="0"
   >
@@ -94,51 +144,36 @@ exports[`components/propertyValueElement should match snapshot, select, read-onl
 exports[`components/propertyValueElement should match snapshot, url, array value 1`] = `
 <div>
   <div
-    class="URLProperty property-link url"
+    class="URLProperty octo-propertyvalue"
   >
-    <input
-      class="Editable octo-propertyvalue"
-      placeholder="Empty"
-      style="width: 5px;"
-      title="http://localhost"
-      value="http://localhost"
-    />
     <a
-      class="Link__button"
+      class="link"
       href="http://localhost"
       rel="noreferrer"
       target="_blank"
     >
-      <i
-        class="CompassIcon icon-link-variant LinkIcon"
-      />
+      http://localhost
     </a>
-  </div>
-</div>
-`;
-
-exports[`components/propertyValueElement should match snapshot, url, array value 2`] = `
-<div>
-  <div
-    class="URLProperty property-link url"
-  >
-    <input
-      class="Editable octo-propertyvalue"
-      placeholder="Empty"
-      style="width: 5px;"
-      title="http://localhost"
-      value="http://localhost"
-    />
-    <a
-      class="Link__button"
-      href="http://localhost"
-      rel="noreferrer"
-      target="_blank"
+    <button
+      aria-label="Edit"
+      class="IconButton Button_Edit"
+      title="Edit"
+      type="button"
     >
       <i
-        class="CompassIcon icon-link-variant LinkIcon"
+        class="CompassIcon icon-pencil-outline EditIcon"
       />
-    </a>
+    </button>
+    <button
+      aria-label="Copy"
+      class="IconButton Button_Copy"
+      title="Copy"
+      type="button"
+    >
+      <i
+        class="CompassIcon icon-content-copy content-copy"
+      />
+    </button>
   </div>
 </div>
 `;

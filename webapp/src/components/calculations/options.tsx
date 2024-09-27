@@ -2,23 +2,29 @@
 // See LICENSE.txt for license information.
 import React from 'react'
 
-import Select, {components, IndicatorProps} from 'react-select'
+import Select, {components, DropdownIndicatorProps} from 'react-select'
 
 import {CSSObject} from '@emotion/serialize'
+
+import {useIntl, IntlShape} from 'react-intl'
 
 import {getSelectBaseStyle} from '../../theme'
 import ChevronUp from '../../widgets/icons/chevronUp'
 import {IPropertyTemplate} from '../../blocks/board'
 
-type Option = {
+export type Option = {
     label: string
     value: string
     displayName: string
 }
 
-const Options:Record<string, Option> = {
+export const Options: Record<string, Option> = {
     none: {value: 'none', label: 'None', displayName: 'Calculate'},
     count: {value: 'count', label: 'Count', displayName: 'Count'},
+    countEmpty: {value: 'countEmpty', label: 'Count Empty', displayName: 'Empty'},
+    countNotEmpty: {value: 'countNotEmpty', label: 'Count Not Empty', displayName: 'Not Empty'},
+    percentEmpty: {value: 'percentEmpty', label: 'Percent Empty', displayName: 'Empty'},
+    percentNotEmpty: {value: 'percentNotEmpty', label: 'Percent Not Empty', displayName: 'Not Empty'},
     countValue: {value: 'countValue', label: 'Count Value', displayName: 'Values'},
     countChecked: {value: 'countChecked', label: 'Count Checked', displayName: 'Checked'},
     percentChecked: {value: 'percentChecked', label: 'Percent Checked', displayName: 'Checked'},
@@ -31,13 +37,82 @@ const Options:Record<string, Option> = {
     min: {value: 'min', label: 'Min', displayName: 'Min'},
     max: {value: 'max', label: 'Max', displayName: 'Max'},
     range: {value: 'range', label: 'Range', displayName: 'Range'},
+    earliest: {value: 'earliest', label: 'Earliest Date', displayName: 'Earliest'},
+    latest: {value: 'latest', label: 'Latest Date', displayName: 'Latest'},
+    dateRange: {value: 'dateRange', label: 'Date Range', displayName: 'Range'},
 }
 
-const optionsByType: Map<string, Option[]> = new Map([
-    ['common', [Options.none, Options.count, Options.countValue, Options.countUniqueValue]],
+export const optionLabelString = (option: Option, intl: IntlShape): string => {
+    switch (option.value) {
+    case 'none': return intl.formatMessage({id: 'Calculations.Options.none.label', defaultMessage: 'None'})
+    case 'count': return intl.formatMessage({id: 'Calculations.Options.count.label', defaultMessage: 'Count'})
+    case 'countValue': return intl.formatMessage({id: 'Calculations.Options.countValue.label', defaultMessage: 'Count value'})
+    case 'countChecked': return intl.formatMessage({id: 'Calculations.Options.countChecked.label', defaultMessage: 'Count checked'})
+    case 'percentChecked': return intl.formatMessage({id: 'Calculations.Options.percentChecked.label', defaultMessage: 'Percent checked'})
+    case 'percentUnchecked': return intl.formatMessage({id: 'Calculations.Options.percentUnchecked.label', defaultMessage: 'Percent unchecked'})
+    case 'countUnchecked': return intl.formatMessage({id: 'Calculations.Options.countUnchecked.label', defaultMessage: 'Count unchecked'})
+    case 'countUniqueValue': return intl.formatMessage({id: 'Calculations.Options.countUniqueValue.label', defaultMessage: 'Count unique values'})
+    case 'sum': return intl.formatMessage({id: 'Calculations.Options.sum.label', defaultMessage: 'Sum'})
+    case 'average': return intl.formatMessage({id: 'Calculations.Options.average.label', defaultMessage: 'Average'})
+    case 'median': return intl.formatMessage({id: 'Calculations.Options.median.label', defaultMessage: 'Median'})
+    case 'min': return intl.formatMessage({id: 'Calculations.Options.min.label', defaultMessage: 'Min'})
+    case 'max': return intl.formatMessage({id: 'Calculations.Options.max.label', defaultMessage: 'Max'})
+    case 'range': return intl.formatMessage({id: 'Calculations.Options.range.label', defaultMessage: 'Range'})
+    case 'earliest': return intl.formatMessage({id: 'Calculations.Options.earliest.label', defaultMessage: 'Earliest'})
+    case 'latest': return intl.formatMessage({id: 'Calculations.Options.latest.label', defaultMessage: 'Latest'})
+    case 'dateRange': return intl.formatMessage({id: 'Calculations.Options.dateRange.label', defaultMessage: 'Range'})
+    default: return option.label
+    }
+}
+
+export const optionDisplayNameString = (option: Option, intl: IntlShape): string => {
+    switch (option.value) {
+    case 'none': return intl.formatMessage({id: 'Calculations.Options.none.displayName', defaultMessage: 'Calculate'})
+    case 'count': return intl.formatMessage({id: 'Calculations.Options.count.displayName', defaultMessage: 'Count'})
+    case 'countValue': return intl.formatMessage({id: 'Calculations.Options.countValue.displayName', defaultMessage: 'Values'})
+    case 'countChecked': return intl.formatMessage({id: 'Calculations.Options.countChecked.displayName', defaultMessage: 'Checked'})
+    case 'percentChecked': return intl.formatMessage({id: 'Calculations.Options.percentChecked.displayName', defaultMessage: 'Checked'})
+    case 'percentUnchecked': return intl.formatMessage({id: 'Calculations.Options.percentUnchecked.displayName', defaultMessage: 'Unchecked'})
+    case 'countUnchecked': return intl.formatMessage({id: 'Calculations.Options.countUnchecked.displayName', defaultMessage: 'Unchecked'})
+    case 'countUniqueValue': return intl.formatMessage({id: 'Calculations.Options.countUniqueValue.displayName', defaultMessage: 'Unique'})
+    case 'sum': return intl.formatMessage({id: 'Calculations.Options.sum.displayName', defaultMessage: 'Sum'})
+    case 'average': return intl.formatMessage({id: 'Calculations.Options.average.displayName', defaultMessage: 'Average'})
+    case 'median': return intl.formatMessage({id: 'Calculations.Options.median.displayName', defaultMessage: 'Median'})
+    case 'min': return intl.formatMessage({id: 'Calculations.Options.min.displayName', defaultMessage: 'Min'})
+    case 'max': return intl.formatMessage({id: 'Calculations.Options.max.displayName', defaultMessage: 'Max'})
+    case 'range': return intl.formatMessage({id: 'Calculations.Options.range.displayName', defaultMessage: 'Range'})
+    case 'earliest': return intl.formatMessage({id: 'Calculations.Options.earliest.displayName', defaultMessage: 'Earliest'})
+    case 'latest': return intl.formatMessage({id: 'Calculations.Options.latest.displayName', defaultMessage: 'Latest'})
+    case 'dateRange': return intl.formatMessage({id: 'Calculations.Options.dateRange.displayName', defaultMessage: 'Range'})
+    default: return option.displayName
+    }
+}
+
+export const optionsByType: Map<string, Option[]> = new Map([
+    ['common', [Options.none, Options.count, Options.countEmpty, Options.countNotEmpty, Options.percentEmpty,
+        Options.percentNotEmpty, Options.countValue, Options.countUniqueValue]],
     ['checkbox', [Options.countChecked, Options.countUnchecked, Options.percentChecked, Options.percentUnchecked]],
     ['number', [Options.sum, Options.average, Options.median, Options.min, Options.max, Options.range]],
+    ['date', [Options.earliest, Options.latest, Options.dateRange]],
+    ['createdTime', [Options.earliest, Options.latest, Options.dateRange]],
+    ['updatedTime', [Options.earliest, Options.latest, Options.dateRange]],
 ])
+
+export const typesByOptions: Map<string, string[]> = generateTypesByOption()
+
+function generateTypesByOption(): Map<string, string[]> {
+    const mapping = new Map<string, string[]>()
+
+    optionsByType.forEach((options, type) => {
+        options.forEach((option) => {
+            const types = mapping.get(option.value) || []
+            types.push(type)
+            mapping.set(option.value, types)
+        })
+    })
+
+    return mapping
+}
 
 const baseStyles = getSelectBaseStyle()
 
@@ -59,7 +134,7 @@ const styles = {
         minWidth: '100%',
         width: 'max-content',
         background: 'rgb(var(--center-channel-bg-rgb))',
-        right: '0',
+        left: '0',
         marginBottom: '0',
     }),
     singleValue: (provided: CSSObject): CSSObject => ({
@@ -76,7 +151,7 @@ const styles = {
     }),
 }
 
-const DropdownIndicator = (props: IndicatorProps<Option, false>) => {
+const DropdownIndicator = (props: DropdownIndicatorProps<Option, false>) => {
     return (
         <components.DropdownIndicator {...props}>
             <ChevronUp/>
@@ -84,19 +159,23 @@ const DropdownIndicator = (props: IndicatorProps<Option, false>) => {
     )
 }
 
-type Props = {
-    value: string,
-    menuOpen?: boolean
+// Calculation option props shared by all implementations of calculation options
+export type CommonCalculationOptionProps = {
+    value: string
+    menuOpen: boolean
     onClose?: () => void
-    onChange: (value: string) => void
-    property: IPropertyTemplate
+    components?: {[key: string]: (props: any) => JSX.Element}
+    onChange: (data: any) => void
+    property?: IPropertyTemplate
 }
 
-const CalculationOptions = (props: Props): JSX.Element => {
-    const options = [...optionsByType.get('common')!]
-    if (optionsByType.get(props.property.type)) {
-        options.push(...optionsByType.get(props.property.type)!)
-    }
+// Props used by the base calculation option component
+type BaseCalculationOptionProps = CommonCalculationOptionProps & {
+    options: Option[]
+}
+
+export const CalculationOptions = (props: BaseCalculationOptionProps): JSX.Element => {
+    const intl = useIntl()
 
     return (
         <Select
@@ -106,14 +185,15 @@ const CalculationOptions = (props: Props): JSX.Element => {
             isClearable={true}
             name={'calculation_options'}
             className={'CalculationOptions'}
-            options={options}
+            classNamePrefix={'CalculationOptions'}
+            options={props.options}
             menuPlacement={'auto'}
             isSearchable={false}
-            components={{DropdownIndicator}}
+            components={{DropdownIndicator, ...(props.components || {})}}
             defaultMenuIsOpen={props.menuOpen}
-            autoFocus={true}
+            autoFocus={false}
             formatOptionLabel={(option: Option, meta) => {
-                return meta.context === 'menu' ? option.label : option.displayName
+                return meta.context === 'menu' ? optionLabelString(option, intl) : optionDisplayNameString(option, intl)
             }}
             onMenuClose={() => {
                 if (props.onClose) {
@@ -127,10 +207,4 @@ const CalculationOptions = (props: Props): JSX.Element => {
             }}
         />
     )
-}
-
-export {
-    CalculationOptions,
-    Options,
-    Option,
 }

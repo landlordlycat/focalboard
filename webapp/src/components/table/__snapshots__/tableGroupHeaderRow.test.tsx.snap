@@ -11,25 +11,19 @@ exports[`should match snapshot on read only 1`] = `
       class="octo-table-cell"
       style="width: 100px;"
     >
-      <div
-        class="Button IconButton readonly"
-        role="button"
+      <button
+        class="IconButton octo-table-cell__expand readonly"
+        type="button"
       >
-        <svg
-          class="DisclosureTriangleIcon Icon"
-          viewBox="0 0 100 100"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <polygon
-            points="37,35 37,65 63,50"
-          />
-        </svg>
-      </div>
+        <i
+          class="CompassIcon icon-menu-right"
+        />
+      </button>
       <span
         class="Label propColorBrown "
       >
         <input
-          class="Editable readonly undefined"
+          class="Editable readonly "
           placeholder="New Select"
           readonly=""
           spellcheck="true"
@@ -39,7 +33,7 @@ exports[`should match snapshot on read only 1`] = `
       </span>
     </div>
     <button
-      class="Button    "
+      class="Button"
       type="button"
     >
       <span>
@@ -61,25 +55,19 @@ exports[`should match snapshot with Group 1`] = `
       class="octo-table-cell"
       style="width: 100px;"
     >
-      <div
-        class="Button IconButton"
-        role="button"
+      <button
+        class="IconButton octo-table-cell__expand "
+        type="button"
       >
-        <svg
-          class="DisclosureTriangleIcon Icon"
-          viewBox="0 0 100 100"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <polygon
-            points="37,35 37,65 63,50"
-          />
-        </svg>
-      </div>
+        <i
+          class="CompassIcon icon-menu-right"
+        />
+      </button>
       <span
         class="Label propColorBrown "
       >
         <input
-          class="Editable undefined"
+          class="Editable "
           placeholder="New Select"
           spellcheck="true"
           title="value 1"
@@ -88,7 +76,7 @@ exports[`should match snapshot with Group 1`] = `
       </span>
     </div>
     <button
-      class="Button    "
+      class="Button"
       type="button"
     >
       <span>
@@ -100,23 +88,23 @@ exports[`should match snapshot with Group 1`] = `
       class="MenuWrapper"
       role="button"
     >
-      <div
-        class="Button IconButton"
-        role="button"
+      <button
+        class="IconButton"
+        type="button"
       >
         <i
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
-      </div>
+      </button>
     </div>
-    <div
-      class="Button IconButton"
-      role="button"
+    <button
+      class="IconButton"
+      type="button"
     >
       <i
         class="CompassIcon icon-plus AddIcon"
       />
-    </div>
+    </button>
   </div>
 </div>
 `;
@@ -132,25 +120,19 @@ exports[`should match snapshot, add new 1`] = `
       class="octo-table-cell"
       style="width: 100px;"
     >
-      <div
-        class="Button IconButton"
-        role="button"
+      <button
+        class="IconButton octo-table-cell__expand "
+        type="button"
       >
-        <svg
-          class="DisclosureTriangleIcon Icon"
-          viewBox="0 0 100 100"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <polygon
-            points="37,35 37,65 63,50"
-          />
-        </svg>
-      </div>
+        <i
+          class="CompassIcon icon-menu-right"
+        />
+      </button>
       <span
         class="Label propColorBrown "
       >
         <input
-          class="Editable undefined"
+          class="Editable "
           placeholder="New Select"
           spellcheck="true"
           title="value 1"
@@ -159,7 +141,7 @@ exports[`should match snapshot, add new 1`] = `
       </span>
     </div>
     <button
-      class="Button    "
+      class="Button"
       type="button"
     >
       <span>
@@ -171,23 +153,23 @@ exports[`should match snapshot, add new 1`] = `
       class="MenuWrapper"
       role="button"
     >
-      <div
-        class="Button IconButton"
-        role="button"
+      <button
+        class="IconButton"
+        type="button"
       >
         <i
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
-      </div>
+      </button>
     </div>
-    <div
-      class="Button IconButton"
-      role="button"
+    <button
+      class="IconButton"
+      type="button"
     >
       <i
         class="CompassIcon icon-plus AddIcon"
       />
-    </div>
+    </button>
   </div>
 </div>
 `;
@@ -203,25 +185,19 @@ exports[`should match snapshot, edit title 1`] = `
       class="octo-table-cell"
       style="width: 100px;"
     >
-      <div
-        class="Button IconButton"
-        role="button"
+      <button
+        class="IconButton octo-table-cell__expand "
+        type="button"
       >
-        <svg
-          class="DisclosureTriangleIcon Icon"
-          viewBox="0 0 100 100"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <polygon
-            points="37,35 37,65 63,50"
-          />
-        </svg>
-      </div>
+        <i
+          class="CompassIcon icon-menu-right"
+        />
+      </button>
       <span
         class="Label propColorBrown "
       >
         <input
-          class="Editable undefined"
+          class="Editable "
           placeholder="New Select"
           spellcheck="true"
           title="value 1"
@@ -230,7 +206,7 @@ exports[`should match snapshot, edit title 1`] = `
       </span>
     </div>
     <button
-      class="Button    "
+      class="Button"
       type="button"
     >
       <span>
@@ -242,23 +218,23 @@ exports[`should match snapshot, edit title 1`] = `
       class="MenuWrapper"
       role="button"
     >
-      <div
-        class="Button IconButton"
-        role="button"
+      <button
+        class="IconButton"
+        type="button"
       >
         <i
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
-      </div>
+      </button>
     </div>
-    <div
-      class="Button IconButton"
-      role="button"
+    <button
+      class="IconButton"
+      type="button"
     >
       <i
         class="CompassIcon icon-plus AddIcon"
       />
-    </div>
+    </button>
   </div>
 </div>
 `;
@@ -274,25 +250,19 @@ exports[`should match snapshot, hide group 1`] = `
       class="octo-table-cell"
       style="width: 100px;"
     >
-      <div
-        class="Button IconButton"
-        role="button"
+      <button
+        class="IconButton octo-table-cell__expand "
+        type="button"
       >
-        <svg
-          class="DisclosureTriangleIcon Icon"
-          viewBox="0 0 100 100"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <polygon
-            points="37,35 37,65 63,50"
-          />
-        </svg>
-      </div>
+        <i
+          class="CompassIcon icon-menu-right"
+        />
+      </button>
       <span
         class="Label propColorBrown "
       >
         <input
-          class="Editable undefined"
+          class="Editable "
           placeholder="New Select"
           spellcheck="true"
           title="value 1"
@@ -301,7 +271,7 @@ exports[`should match snapshot, hide group 1`] = `
       </span>
     </div>
     <button
-      class="Button    "
+      class="Button"
       type="button"
     >
       <span>
@@ -313,23 +283,23 @@ exports[`should match snapshot, hide group 1`] = `
       class="MenuWrapper"
       role="button"
     >
-      <div
-        class="Button IconButton"
-        role="button"
+      <button
+        class="IconButton"
+        type="button"
       >
         <i
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
-      </div>
+      </button>
     </div>
-    <div
-      class="Button IconButton"
-      role="button"
+    <button
+      class="IconButton"
+      type="button"
     >
       <i
         class="CompassIcon icon-plus AddIcon"
       />
-    </div>
+    </button>
   </div>
 </div>
 `;
@@ -345,20 +315,14 @@ exports[`should match snapshot, no groups 1`] = `
       class="octo-table-cell"
       style="width: 100px;"
     >
-      <div
-        class="Button IconButton"
-        role="button"
+      <button
+        class="IconButton octo-table-cell__expand "
+        type="button"
       >
-        <svg
-          class="DisclosureTriangleIcon Icon"
-          viewBox="0 0 100 100"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <polygon
-            points="37,35 37,65 63,50"
-          />
-        </svg>
-      </div>
+        <i
+          class="CompassIcon icon-menu-right"
+        />
+      </button>
       <span
         class="Label empty "
         title="Items with an empty Property 1 property will go here. This column cannot be removed."
@@ -368,7 +332,7 @@ exports[`should match snapshot, no groups 1`] = `
       
     </div>
     <button
-      class="Button    "
+      class="Button"
       type="button"
     >
       <span>
@@ -380,23 +344,23 @@ exports[`should match snapshot, no groups 1`] = `
       class="MenuWrapper"
       role="button"
     >
-      <div
-        class="Button IconButton"
-        role="button"
+      <button
+        class="IconButton"
+        type="button"
       >
         <i
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
-      </div>
+      </button>
     </div>
-    <div
-      class="Button IconButton"
-      role="button"
+    <button
+      class="IconButton"
+      type="button"
     >
       <i
         class="CompassIcon icon-plus AddIcon"
       />
-    </div>
+    </button>
   </div>
 </div>
 `;

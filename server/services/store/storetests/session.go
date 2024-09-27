@@ -11,30 +11,26 @@ import (
 )
 
 func StoreTestSessionStore(t *testing.T, setup func(t *testing.T) (store.Store, func())) {
-	container := store.Container{
-		WorkspaceID: "0",
-	}
-
 	t.Run("CreateAndGetAndDeleteSession", func(t *testing.T) {
 		store, tearDown := setup(t)
 		defer tearDown()
-		testCreateAndGetAndDeleteSession(t, store, container)
+		testCreateAndGetAndDeleteSession(t, store)
 	})
 
 	t.Run("GetActiveUserCount", func(t *testing.T) {
 		store, tearDown := setup(t)
 		defer tearDown()
-		testGetActiveUserCount(t, store, container)
+		testGetActiveUserCount(t, store)
 	})
 
 	t.Run("UpdateSession", func(t *testing.T) {
 		store, tearDown := setup(t)
 		defer tearDown()
-		testUpdateSession(t, store, container)
+		testUpdateSession(t, store)
 	})
 }
 
-func testCreateAndGetAndDeleteSession(t *testing.T, store store.Store, _ store.Container) {
+func testCreateAndGetAndDeleteSession(t *testing.T, store store.Store) {
 	session := &model.Session{
 		ID:    "session-id",
 		Token: "token",
@@ -49,6 +45,12 @@ func testCreateAndGetAndDeleteSession(t *testing.T, store store.Store, _ store.C
 		require.Equal(t, session, got)
 	})
 
+	t.Run("Get nonexistent session", func(t *testing.T) {
+		got, err := store.GetSession("nonexistent-token", 60*60)
+		require.True(t, model.IsErrNotFound(err))
+		require.Nil(t, got)
+	})
+
 	t.Run("DeleteAndGetSession", func(t *testing.T) {
 		err := store.DeleteSession(session.ID)
 		require.NoError(t, err)
@@ -58,7 +60,7 @@ func testCreateAndGetAndDeleteSession(t *testing.T, store store.Store, _ store.C
 	})
 }
 
-func testGetActiveUserCount(t *testing.T, store store.Store, _ store.Container) {
+func testGetActiveUserCount(t *testing.T, store store.Store) {
 	t.Run("no active user", func(t *testing.T) {
 		count, err := store.GetActiveUserCount(60)
 		require.NoError(t, err)
@@ -84,7 +86,7 @@ func testGetActiveUserCount(t *testing.T, store store.Store, _ store.Container) 
 	})
 }
 
-func testUpdateSession(t *testing.T, store store.Store, _ store.Container) {
+func testUpdateSession(t *testing.T, store store.Store) {
 	session := &model.Session{
 		ID:    "session-id",
 		Token: "token",

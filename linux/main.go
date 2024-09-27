@@ -4,15 +4,19 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"os/exec"
+	"path"
+	"path/filepath"
 	"runtime"
 
 	"github.com/google/uuid"
 	"github.com/mattermost/focalboard/server/server"
 	"github.com/mattermost/focalboard/server/services/config"
+	"github.com/mattermost/focalboard/server/services/permissions/localpermissions"
 	"github.com/webview/webview"
 
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
+	"github.com/mattermost/mattermost/server/public/shared/mlog"
 )
 
 var sessionToken string = "su-" + uuid.New().String()
@@ -34,16 +38,19 @@ func getFreePort() (int, error) {
 func runServer(port int) (*server.Server, error) {
 	logger, _ := mlog.NewLogger()
 
+	executable, _ := os.Executable()
+	executableDir, _ := filepath.EvalSymlinks(filepath.Dir(executable))
+
 	config := &config.Configuration{
 		ServerRoot:              fmt.Sprintf("http://localhost:%d", port),
 		Port:                    port,
 		DBType:                  "sqlite3",
-		DBConfigString:          "./focalboard.db",
+		DBConfigString:          path.Join(executableDir, "focalboard.db"),
 		UseSSL:                  false,
 		SecureCookie:            true,
-		WebPath:                 "./pack",
+		WebPath:                 path.Join(executableDir, "pack"),
 		FilesDriver:             "local",
-		FilesPath:               "./focalboard_files",
+		FilesPath:               path.Join(executableDir, "focalboard_files"),
 		Telemetry:               true,
 		WebhookUpdate:           []string{},
 		SessionExpireTime:       259200000000,
@@ -54,20 +61,24 @@ func runServer(port int) (*server.Server, error) {
 		AuthMode:                "native",
 	}
 
-	db, err := server.NewStore(config, logger)
+	singleUser := len(sessionToken) > 0
+	db, err := server.NewStore(config, singleUser, logger)
 	if err != nil {
 		fmt.Println("ERROR INITIALIZING THE SERVER STORE", err)
 		return nil, err
 	}
 
+	permissionsService := localpermissions.New(db, logger)
+
 	params := server.Params{
-		Cfg:             config,
-		SingleUserToken: sessionToken,
-		DBStore:         db,
-		Logger:          logger,
-		ServerID:        "",
-		WSAdapter:       nil,
-		NotifyBackends:  nil,
+		Cfg:                config,
+		SingleUserToken:    sessionToken,
+		DBStore:            db,
+		Logger:             logger,
+		ServerID:           "",
+		WSAdapter:          nil,
+		NotifyBackends:     nil,
+		PermissionsService: permissionsService,
 	}
 
 	server, err := server.New(params)

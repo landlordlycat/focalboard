@@ -1,33 +1,20 @@
-# Code Contribution Guidelines
+# Disclaimer
 
-Thank you for your interest in contributing! Please see the [Focalboard Contribution Guide](https://www.focalboard.com/contribute/getting-started/) which describes the process for making code contributions, and [join our Focalboard community channel](https://community.mattermost.com/core/channels/focalboard) to ask questions from community members and the core team.
+> [!WARNING]
+> **Effective September 15th, 2023, Mattermost, Inc. staff are no longer reviewing or merging pull requests for either Focalboard or the Mattermost Boards plugin in this repository (`mattermost/focalboard`). We encourage the community to fork this repository for continued development and contributions.**
+>
+> The reason behind these changes is to focus Mattermost developer resources on improving the platform’s performance and core features to ensure Mattermost continues being resilient, stable, and best-in-breed for critical operations.
+>
+> ️💡 [Learn more](https://forum.mattermost.com/t/upcoming-product-changes-to-boards-and-various-plugins/16669)
 
-When you submit a pull request, it goes through a [code review process outlined here](https://www.focalboard.com/contribute/getting-started/code-review/).
+## Past maintainers
 
-# Updating Changelog
-
-After a noteable bug fix or an improvement you've submitted is merged, please consider making a pull request to the [CHANGELOG.md](https://github.com/mattermost/focalboard/blob/main/CHANGELOG.md) under the next release section. 
-
-# Bug reports
-
-Please file a [GitHub issue](https://github.com/mattermost/focalboard/issues) if anything isn't working the way you expect.
-
-# Documentation 
-
-You can contribute to our documentation in the [Mattermost Boards documentation](https://docs.mattermost.com/guides/boards.html). Read more about how the contribution process works in the repo [README](https://github.com/mattermost/docs/blob/master/README.md). Visit the [Documentation Working Group channel](https://community.mattermost.com/core/channels/dwg-documentation-working-group) on our Community server if you have any questions!
-
-# Contributors
-
-**Quality Assurance Contributors**: Correctly files verified bug reports.
-
-- [chenilim](https://github.com/chenilim)
-
-**Community Organizers**: Responds with comments to Bug Reports, Issues, and Pull Requests with tags, edits and mentions to Core Committers and contributors.
-
-- [it33](https://github.com/it33)
-
-**Core Committers**: Updates project. Approves and merges pull requests from contributors.
-
-- [chenilim](https://github.com/chenilim)
-- [jespino](https://github.com/jespino)
-- [coreyhulen](https://github.com/coreyhulen)
+- **Scott Bishel**: [@sbishel](https://github.com/sbishel)
+- **Jesús Espino**: [@jespino](https://github.com/jespino)
+- **Doug Lauder**: [@wiggin77](https://github.com/wiggin77)
+- **Miguel de la Cruz**: [@mgdelacroix](https://github.com/mgdelacroix)
+- **Harshil Sharma**: [@harshilsharma63](https://github.com/harshilsharma63)
+- **Chen Lim**: [@chenilim](https://github.com/chenilim)
+- **Ogi Marušić**: [@ogi-m](https://github.com/ogi-m)
+- **Winson Wu**: [@wuwinson](https://github.com/wuwinson)
+- **Justine Geffen**: [@justinegeffen](https://github.com/justinegeffen)

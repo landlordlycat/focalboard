@@ -2,26 +2,29 @@
 // See LICENSE.txt for license information.
 import React, {useCallback} from 'react'
 
-import {FormattedMessage, useIntl} from 'react-intl'
-import {useDragLayer, useDrop} from 'react-dnd'
+import {FormattedMessage} from 'react-intl'
 
 import {IPropertyOption, IPropertyTemplate, Board, BoardGroup} from '../../blocks/board'
-import {createBoardView, BoardView, ISortOption} from '../../blocks/boardView'
+import {createBoardView, BoardView} from '../../blocks/boardView'
 import {Card} from '../../blocks/card'
-import {Constants} from '../../constants'
+import {Constants, Permission} from '../../constants'
 import mutator from '../../mutator'
 import {Utils} from '../../utils'
 import {useAppDispatch} from '../../store/hooks'
 import {updateView} from '../../store/views'
+import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
 
-import {OctoUtils} from '../../octoUtils'
+import BoardPermissionGate from '../permissions/boardPermissionGate'
 
 import './table.scss'
 
-import TableHeader from './tableHeader'
+import HiddenCardCount from '../../components/hiddenCardCount/hiddenCardCount'
+
+import TableHeaders from './tableHeaders'
 import TableRows from './tableRows'
 import TableGroup from './tableGroup'
 import CalculationRow from './calculation/calculationRow'
+import {ColumnResizeProvider} from './tableColumnResizeContext'
 
 type Props = {
     selectedCardIds: string[]
@@ -36,125 +39,35 @@ type Props = {
     showCard: (cardId?: string) => void
     addCard: (groupByOptionId?: string) => Promise<void>
     onCardClicked: (e: React.MouseEvent, card: Card) => void
+    hiddenCardsCount: number
+    showHiddenCardCountNotification: (show: boolean) => void
 }
 
 const Table = (props: Props): JSX.Element => {
-    const {board, cards, activeView, visibleGroups, groupByProperty, views} = props
+    const {board, cards, activeView, visibleGroups, groupByProperty, views, hiddenCardsCount} = props
     const isManualSort = activeView.fields.sortOptions?.length === 0
-    const intl = useIntl()
+    const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
+    const canEditCards = useHasCurrentBoardPermissions([Permission.ManageBoardCards])
     const dispatch = useAppDispatch()
 
-    const {offset, resizingColumn} = useDragLayer((monitor) => {
-        if (monitor.getItemType() === 'horizontalGrip') {
-            return {
-                offset: monitor.getDifferenceFromInitialOffset()?.x || 0,
-                resizingColumn: monitor.getItem()?.id,
-            }
-        }
-        return {
-            offset: 0,
-            resizingColumn: '',
-        }
-    })
-
-    const columnRefs: Map<string, React.RefObject<HTMLDivElement>> = new Map()
-
-    const [, drop] = useDrop(() => ({
-        accept: 'horizontalGrip',
-        drop: async (item: { id: string }, monitor) => {
-            const columnWidths = {...activeView.fields.columnWidths}
-            const finalOffset = monitor.getDifferenceFromInitialOffset()?.x || 0
-            const newWidth = Math.max(Constants.minColumnWidth, (columnWidths[item.id] || 0) + (finalOffset || 0))
-            if (newWidth !== columnWidths[item.id]) {
-                columnWidths[item.id] = newWidth
-
-                const newView = createBoardView(activeView)
-                newView.fields.columnWidths = columnWidths
-                try {
-                    dispatch(updateView(newView))
-                    await mutator.updateBlock(newView, activeView, 'resize column')
-                } catch {
-                    dispatch(updateView(activeView))
-                }
-            }
-        },
-    }), [activeView])
-
-    const onAutoSizeColumn = useCallback((columnID: string, headerWidth: number) => {
-        let longestSize = headerWidth
-        const visibleProperties = board.fields.cardProperties.filter(() => activeView.fields.visiblePropertyIds.includes(columnID)) || []
-        const columnRef = columnRefs.get(columnID)
-        if (!columnRef?.current) {
-            return
-        }
-
-        let template: IPropertyTemplate | undefined
-        const columnFontPadding = Utils.getFontAndPaddingFromCell(columnRef.current)
-        let perItemPadding = 0
-        if (columnID !== Constants.titleColumnId) {
-            template = visibleProperties.find((t: IPropertyTemplate) => t.id === columnID)
-            if (!template) {
-                return
-            }
-            if (template.type === 'multiSelect') {
-                // For multiselect, the padding calculated above depends on the number selected when calculating the padding.
-                // Need to calculate it manually here.
-                // DOM Object hierarchy should be {cell -> property -> [value1, value2, etc]}
-                let valueCount = 0
-                if (columnRef?.current?.childElementCount > 0) {
-                    const propertyElement = columnRef.current.children.item(0) as Element
-                    if (propertyElement) {
-                        valueCount = propertyElement.childElementCount
-                        if (valueCount > 0) {
-                            const statusPadding = Utils.getFontAndPaddingFromChildren(propertyElement.children, 0)
-                            perItemPadding = statusPadding.padding / valueCount
-                        }
-                    }
-                }
-
-                // remove the "value" portion of the original calculation
-                columnFontPadding.padding -= (perItemPadding * valueCount)
-            }
-        }
-
-        cards.forEach((card) => {
-            let thisLen = 0
-            if (columnID === Constants.titleColumnId) {
-                thisLen = Utils.getTextWidth(card.title, columnFontPadding.fontDescriptor) + columnFontPadding.padding
-            } else if (template) {
-                const displayValue = (OctoUtils.propertyDisplayValue(card, card.fields.properties[columnID], template as IPropertyTemplate, intl) || '')
-                switch (template.type) {
-                case 'select': {
-                    thisLen = Utils.getTextWidth(displayValue.toString().toUpperCase(), columnFontPadding.fontDescriptor)
-                    break
-                }
-                case 'multiSelect': {
-                    if (displayValue) {
-                        const displayValues = displayValue as string[]
-                        displayValues.forEach((value) => {
-                            thisLen += Utils.getTextWidth(value.toUpperCase(), columnFontPadding.fontDescriptor) + perItemPadding
-                        })
-                    }
-                    break
-                }
-                default: {
-                    thisLen = Utils.getTextWidth(displayValue.toString(), columnFontPadding.fontDescriptor)
-                    break
-                }
-                }
-                thisLen += columnFontPadding.padding
-            }
-            if (thisLen > longestSize) {
-                longestSize = thisLen
-            }
-        })
-
+    const resizeColumn = useCallback(async (columnId: string, width: number) => {
         const columnWidths = {...activeView.fields.columnWidths}
-        columnWidths[columnID] = longestSize
-        const newView = createBoardView(activeView)
-        newView.fields.columnWidths = columnWidths
-        mutator.updateBlock(newView, activeView, 'autosize column')
-    }, [activeView, board, cards])
+        const newWidth = Math.max(Constants.minColumnWidth, width)
+        if (newWidth !== columnWidths[columnId]) {
+            Utils.log(`Resize of column finished: prev=${columnWidths[columnId]}, new=${newWidth}`)
+
+            columnWidths[columnId] = newWidth
+
+            const newView = createBoardView(activeView)
+            newView.fields.columnWidths = columnWidths
+            try {
+                dispatch(updateView(newView))
+                await mutator.updateBlock(board.id, newView, activeView, 'resize column')
+            } catch {
+                dispatch(updateView(activeView))
+            }
+        }
+    }, [activeView])
 
     const hideGroup = useCallback((groupById: string): void => {
         const index: number = activeView.fields.collapsedOptionIds.indexOf(groupById)
@@ -168,17 +81,9 @@ const Table = (props: Props): JSX.Element => {
         const newView = createBoardView(activeView)
         newView.fields.collapsedOptionIds = newValue
         mutator.performAsUndoGroup(async () => {
-            await mutator.updateBlock(newView, activeView, 'hide group')
+            await mutator.updateBlock(board.id, newView, activeView, 'hide group')
         })
     }, [activeView])
-
-    const onDropToColumn = useCallback(async (template: IPropertyTemplate, container: IPropertyTemplate) => {
-        Utils.log(`ondrop. Source column: ${template.name}, dest column: ${container.name}`)
-
-        // Move template to new index
-        const destIndex = container ? board.fields.cardProperties.indexOf(container) : 0
-        await mutator.changePropertyTemplateOrder(board, template, destIndex >= 0 ? destIndex : 0)
-    }, [board])
 
     const onDropToGroupHeader = useCallback(async (option: IPropertyOption, dstOption?: IPropertyOption) => {
         if (dstOption) {
@@ -192,14 +97,14 @@ const Table = (props: Props): JSX.Element => {
             visibleOptionIds.splice(srcIndex, 0, visibleOptionIds.splice(destIndex, 1)[0])
             Utils.log(`ondrop. updated visibleoptionids: ${visibleOptionIds}`)
 
-            await mutator.changeViewVisibleOptionIds(activeView.id, activeView.fields.visibleOptionIds, visibleOptionIds)
+            await mutator.changeViewVisibleOptionIds(board.id, activeView.id, activeView.fields.visibleOptionIds, visibleOptionIds)
         }
     }, [activeView, visibleGroups])
 
     const onDropToCard = useCallback((srcCard: Card, dstCard: Card) => {
         Utils.log(`onDropToCard: ${dstCard.title}`)
         onDropToGroup(srcCard, dstCard.fields.properties[activeView.fields.groupById!] as string, dstCard.id)
-    }, [activeView])
+    }, [activeView.fields.groupById, cards])
 
     const onDropToGroup = useCallback((srcCard: Card, groupID: string, dstCardID: string) => {
         Utils.log(`onDropToGroup: ${srcCard.title}`)
@@ -225,7 +130,7 @@ const Table = (props: Props): JSX.Element => {
                     Utils.log(`ondrop. oldValue: ${oldOptionId}`)
 
                     if (groupID !== oldOptionId) {
-                        awaits.push(mutator.changePropertyValue(draggedCard, groupByProperty!.id, groupID, description))
+                        awaits.push(mutator.changePropertyValue(board.id, draggedCard, groupByProperty!.id, groupID, description))
                     }
                 }
                 await Promise.all(awaits)
@@ -256,82 +161,33 @@ const Table = (props: Props): JSX.Element => {
             }
 
             mutator.performAsUndoGroup(async () => {
-                await mutator.changeViewCardOrder(activeView, cardOrder, description)
+                await mutator.changeViewCardOrder(board.id, activeView.id, activeView.fields.cardOrder, cardOrder, description)
             })
         }
     }, [activeView, cards, props.selectedCardIds, groupByProperty])
 
     const propertyNameChanged = useCallback(async (option: IPropertyOption, text: string): Promise<void> => {
-        await mutator.changePropertyOptionValue(board, groupByProperty!, option, text)
+        await mutator.changePropertyOptionValue(board.id, board.cardProperties, groupByProperty!, option, text)
     }, [board, groupByProperty])
 
-    const titleSortOption = activeView.fields.sortOptions?.find((o) => o.propertyId === Constants.titleColumnId)
-    let titleSorted: 'up' | 'down' | 'none' = 'none'
-    if (titleSortOption) {
-        titleSorted = titleSortOption.reversed ? 'down' : 'up'
-    }
-
     return (
-        <div
-            className='Table'
-            ref={drop}
-        >
-            <div className='octo-table-body'>
-                {/* Headers */}
-                <div
-                    className='octo-table-header'
-                    id='mainBoardHeader'
-                >
-                    <TableHeader
-                        name={
-                            <FormattedMessage
-                                id='TableComponent.name'
-                                defaultMessage='Name'
-                            />
-                        }
-                        sorted={titleSorted}
-                        readonly={props.readonly}
+        <div className='Table'>
+            <ColumnResizeProvider
+                columnWidths={activeView.fields.columnWidths}
+                onResizeColumn={resizeColumn}
+            >
+                <div className='octo-table-body'>
+                    <TableHeaders
                         board={board}
-                        activeView={activeView}
                         cards={cards}
+                        activeView={activeView}
                         views={views}
-                        template={{id: Constants.titleColumnId, name: 'title', type: 'text', options: []}}
-                        offset={resizingColumn === Constants.titleColumnId ? offset : 0}
-                        onDrop={onDropToColumn}
-                        onAutoSizeColumn={onAutoSizeColumn}
+                        readonly={props.readonly || !canEditBoardProperties}
                     />
 
-                    {/* Table header row */}
-
-                    {board.fields.cardProperties.filter((template: IPropertyTemplate) => activeView.fields.visiblePropertyIds.includes(template.id)).map((template: IPropertyTemplate) => {
-                        let sorted: 'up' | 'down' | 'none' = 'none'
-                        const sortOption = activeView.fields.sortOptions.find((o: ISortOption) => o.propertyId === template.id)
-                        if (sortOption) {
-                            sorted = sortOption.reversed ? 'down' : 'up'
-                        }
-
-                        return (
-                            <TableHeader
-                                name={template.name}
-                                sorted={sorted}
-                                readonly={props.readonly}
-                                board={board}
-                                activeView={activeView}
-                                cards={cards}
-                                views={views}
-                                template={template}
-                                key={template.id}
-                                offset={resizingColumn === template.id ? offset : 0}
-                                onDrop={onDropToColumn}
-                                onAutoSizeColumn={onAutoSizeColumn}
-                            />
-                        )
-                    })}
-                </div>
-
-                {/* Table rows */}
-                <div className='table-row-container'>
-                    {activeView.fields.groupById &&
+                    {/* Table rows */}
+                    <div className='table-row-container'>
+                        {activeView.fields.groupById &&
                     visibleGroups.map((group) => {
                         return (
                             <TableGroup
@@ -340,8 +196,7 @@ const Table = (props: Props): JSX.Element => {
                                 activeView={activeView}
                                 groupByProperty={groupByProperty}
                                 group={group}
-                                readonly={props.readonly}
-                                columnRefs={columnRefs}
+                                readonly={props.readonly || !canEditCards}
                                 selectedCardIds={props.selectedCardIds}
                                 cardIdToFocusOnRender={props.cardIdToFocusOnRender}
                                 hideGroup={hideGroup}
@@ -354,52 +209,58 @@ const Table = (props: Props): JSX.Element => {
                                 onDropToGroup={onDropToGroup}
                             />)
                     })
-                    }
+                        }
 
-                    {/* No Grouping, Rows, one per card */}
-                    {!activeView.fields.groupById &&
-                    <TableRows
-                        board={board}
-                        activeView={activeView}
-                        columnRefs={columnRefs}
-                        cards={cards}
-                        selectedCardIds={props.selectedCardIds}
-                        readonly={props.readonly}
-                        cardIdToFocusOnRender={props.cardIdToFocusOnRender}
-                        showCard={props.showCard}
-                        addCard={props.addCard}
-                        onCardClicked={props.onCardClicked}
-                        onDrop={onDropToCard}
-                    />
-                    }
-                </div>
-
-                {/* Add New row */}
-                <div className='octo-table-footer'>
-                    {!props.readonly && !activeView.fields.groupById &&
-                    <div
-                        className='octo-table-cell'
-                        onClick={() => {
-                            props.addCard('')
-                        }}
-                    >
-                        <FormattedMessage
-                            id='TableComponent.plus-new'
-                            defaultMessage='+ New'
+                        {/* No Grouping, Rows, one per card */}
+                        {!activeView.fields.groupById &&
+                        <TableRows
+                            board={board}
+                            activeView={activeView}
+                            cards={cards}
+                            selectedCardIds={props.selectedCardIds}
+                            readonly={props.readonly || !canEditCards}
+                            cardIdToFocusOnRender={props.cardIdToFocusOnRender}
+                            showCard={props.showCard}
+                            addCard={props.addCard}
+                            onCardClicked={props.onCardClicked}
+                            onDrop={onDropToCard}
                         />
+                        }
                     </div>
-                    }
-                </div>
 
-                <CalculationRow
-                    board={board}
-                    cards={cards}
-                    activeView={activeView}
-                    resizingColumn={resizingColumn}
-                    offset={offset}
-                    readonly={props.readonly}
-                />
-            </div>
+                    {/* Add New row */}
+                    <div className='octo-table-footer'>
+                        {!props.readonly && !activeView.fields.groupById &&
+                        <BoardPermissionGate permissions={[Permission.ManageBoardCards]}>
+                            <div
+                                className='octo-table-cell'
+                                onClick={() => {
+                                    props.addCard('')
+                                }}
+                            >
+                                <FormattedMessage
+                                    id='TableComponent.plus-new'
+                                    defaultMessage='+ New'
+                                />
+                            </div>
+                        </BoardPermissionGate>
+                        }
+                    </div>
+
+                    <CalculationRow
+                        board={board}
+                        cards={cards}
+                        activeView={activeView}
+                        readonly={props.readonly || !canEditBoardProperties}
+                    />
+                </div>
+            </ColumnResizeProvider>
+
+            {hiddenCardsCount > 0 &&
+            <HiddenCardCount
+                showHiddenCardNotification={props.showHiddenCardCountNotification}
+                hiddenCardsCount={hiddenCardsCount}
+            />}
         </div>
     )
 }

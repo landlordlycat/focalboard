@@ -1,6 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import React from 'react'
+import React, {ReactElement, ReactNode} from 'react'
+import {Provider as ReduxProvider} from 'react-redux'
 
 import {fireEvent, render} from '@testing-library/react'
 
@@ -8,11 +9,13 @@ import {act} from 'react-dom/test-utils'
 
 import {TestBlockFactory} from '../../test/testBlockFactory'
 
-import {mockDOM, wrapDNDIntl} from '../../testUtils'
+import {mockDOM, wrapDNDIntl, mockStateStore} from '../../testUtils'
 
 import CardDetailContents from './cardDetailContents'
+import {CardDetailProvider} from './cardDetailContext'
 
 global.fetch = jest.fn()
+jest.mock('draft-js/lib/generateRandomKey', () => () => '123')
 
 beforeAll(() => {
     mockDOM()
@@ -20,7 +23,7 @@ beforeAll(() => {
 
 describe('components/cardDetail/cardDetailContents', () => {
     const board = TestBlockFactory.createBoard()
-    board.fields.cardProperties = [
+    board.cardProperties = [
         {
             id: 'property_id_1',
             name: 'Owner',
@@ -47,8 +50,45 @@ describe('components/cardDetail/cardDetailContents', () => {
 
     const card = TestBlockFactory.createCard(board)
 
+    const state = {
+        users: {
+            boardUsers: {
+                1: {username: 'abc'},
+                2: {username: 'd'},
+                3: {username: 'e'},
+                4: {username: 'f'},
+                5: {username: 'g'},
+            },
+        },
+        boards: {
+            boards: {
+                [board.id]: board,
+            },
+            current: board.id,
+        },
+        cards: {
+            cards: {
+                [card.id]: card,
+            },
+            current: card.id,
+        },
+        clientConfig: {
+            value: {},
+        },
+    }
+    const store = mockStateStore([], state)
+    const wrap = (child: ReactNode): ReactElement => (
+        wrapDNDIntl(
+            <ReduxProvider store={store}>
+                <CardDetailProvider card={card}>
+                    {child}
+                </CardDetailProvider>
+            </ReduxProvider>,
+        )
+    )
+
     test('should match snapshot', async () => {
-        const component = wrapDNDIntl((
+        const component = wrap((
             <CardDetailContents
                 id='test-id'
                 card={card}
@@ -67,7 +107,7 @@ describe('components/cardDetail/cardDetailContents', () => {
 
     test('should match snapshot with contents array', async () => {
         const contents = [TestBlockFactory.createDivider(card)]
-        const component = wrapDNDIntl((
+        const component = wrap((
             <CardDetailContents
                 id='test-id'
                 card={card}
@@ -81,58 +121,12 @@ describe('components/cardDetail/cardDetailContents', () => {
             const result = render(component)
             container = result.container
         })
-        expect(container).toMatchSnapshot()
-    })
-
-    test('should match snapshot after onBlur triggers', async () => {
-        const component = wrapDNDIntl((
-            <CardDetailContents
-                id='test-id'
-                card={card}
-                contents={[]}
-                readonly={false}
-            />
-        ))
-
-        let container: Element | undefined
-        await act(async () => {
-            const result = render(component)
-            container = result.container
-        })
-        const markdownEditorField = container!.querySelector('.octo-editor-preview.octo-placeholder')
-        expect(markdownEditorField).toBeDefined()
-        fireEvent.click(markdownEditorField!)
-
-        const onFocusEvent = new FocusEvent('focus', {
-            view: window,
-            bubbles: true,
-            cancelable: true,
-        })
-
-        const onBlurEvent = new FocusEvent('blur', {
-            view: window,
-            bubbles: true,
-            cancelable: true,
-        })
-
-        const textareaContainer = container!.querySelectorAll('.CodeMirror.cm-s-easymde.CodeMirror-wrap')
-        const textarea = textareaContainer[textareaContainer.length - 1].querySelector('textarea')
-
-        await act(async () => {
-            textarea!.dispatchEvent(onFocusEvent)
-            fireEvent.input(textarea!, {target: {value: 'test123'}})
-            fireEvent.keyPress(textarea!, {key: 'Escape', code: 'Escape'})
-            textarea!.dispatchEvent(onBlurEvent)
-        })
-
-        // TODO: Remove this hack if we get rid of codemirror/simpleMDE.
-        await new Promise((r) => setTimeout(r, 100))
         expect(container).toMatchSnapshot()
     })
 
     test('should match snapshot with contents array that has array inside it', async () => {
         const contents = [TestBlockFactory.createDivider(card), [TestBlockFactory.createDivider(card), TestBlockFactory.createDivider(card)]]
-        const component = wrapDNDIntl((
+        const component = wrap((
             <CardDetailContents
                 id='test-id'
                 card={card}
@@ -140,7 +134,6 @@ describe('components/cardDetail/cardDetailContents', () => {
                 readonly={false}
             />
         ))
-
         let container: Element | undefined
         await act(async () => {
             const result = render(component)
@@ -152,7 +145,7 @@ describe('components/cardDetail/cardDetailContents', () => {
     test('should match snapshot after drag and drop event', async () => {
         const contents = [TestBlockFactory.createDivider(card), [TestBlockFactory.createDivider(card), TestBlockFactory.createDivider(card)]]
         card.fields.contentOrder = contents.map((content) => (Array.isArray(content) ? content.map((c) => c.id) : (content as any).id))
-        const component = wrapDNDIntl((
+        const component = wrap((
             <CardDetailContents
                 id='test-id'
                 card={card}
@@ -181,7 +174,7 @@ describe('components/cardDetail/cardDetailContents', () => {
     test('should match snapshot after drag and drop event 2', async () => {
         const contents = [TestBlockFactory.createDivider(card), TestBlockFactory.createDivider(card)]
         card.fields.contentOrder = contents.map((content) => (Array.isArray(content) ? content.map((c) => c.id) : (content as any).id))
-        const component = wrapDNDIntl((
+        const component = wrap((
             <CardDetailContents
                 id='test-id'
                 card={card}
@@ -210,7 +203,7 @@ describe('components/cardDetail/cardDetailContents', () => {
     test('should match snapshot after drag and drop event 3', async () => {
         const contents = [TestBlockFactory.createDivider(card), TestBlockFactory.createDivider(card)]
         card.fields.contentOrder = contents.map((content) => (Array.isArray(content) ? content.map((c) => c.id) : (content as any).id))
-        const component = wrapDNDIntl((
+        const component = wrap((
             <CardDetailContents
                 id='test-id'
                 card={card}

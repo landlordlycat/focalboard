@@ -4,9 +4,10 @@
 import React from 'react'
 import {useIntl} from 'react-intl'
 
-import {BlockTypes} from '../blocks/block'
+import {BlockTypes, Block} from '../blocks/block'
 import {Card} from '../blocks/card'
 import mutator from '../mutator'
+import octoClient from '../octoClient'
 import {Utils} from '../utils'
 import Menu from '../widgets/menu'
 
@@ -18,10 +19,9 @@ type Props = {
     cords: {x: number, y?: number, z?: number}
 }
 
-const AddContentMenuItem = React.memo((props:Props): JSX.Element => {
+const AddContentMenuItem = (props: Props): JSX.Element => {
     const {card, type, cords} = props
     const index = cords.x
-    const contentOrder = card.fields.contentOrder.slice()
     const intl = useIntl()
 
     const handler = contentRegistry.getHandler(type)
@@ -37,20 +37,28 @@ const AddContentMenuItem = React.memo((props:Props): JSX.Element => {
             name={handler.getDisplayText(intl)}
             icon={handler.getIcon()}
             onClick={async () => {
-                const newBlock = await handler.createBlock(card.rootId)
+                const newBlock = await handler.createBlock(card.boardId, intl)
                 newBlock.parentId = card.id
-                newBlock.rootId = card.rootId
+                newBlock.boardId = card.boardId
 
-                contentOrder.splice(index, 0, newBlock.id)
                 const typeName = handler.getDisplayText(intl)
                 const description = intl.formatMessage({id: 'ContentBlock.addElement', defaultMessage: 'add {type}'}, {type: typeName})
-                mutator.performAsUndoGroup(async () => {
-                    await mutator.insertBlock(newBlock, description)
-                    await mutator.changeCardContentOrder(card.id, card.fields.contentOrder, contentOrder, description)
-                })
+
+                const afterRedo = async (nb: Block) => {
+                    const contentOrder = card.fields.contentOrder.slice()
+                    contentOrder.splice(index, 0, nb.id)
+                    await octoClient.patchBlock(card.boardId, card.id, {updatedFields: {contentOrder}})
+                }
+
+                const beforeUndo = async () => {
+                    const contentOrder = card.fields.contentOrder.slice()
+                    await octoClient.patchBlock(card.boardId, card.id, {updatedFields: {contentOrder}})
+                }
+
+                await mutator.insertBlock(newBlock.boardId, newBlock, description, afterRedo, beforeUndo)
             }}
         />
     )
-})
+}
 
-export default AddContentMenuItem
+export default React.memo(AddContentMenuItem)

@@ -1,21 +1,21 @@
 package audit
 
 import (
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
+	"github.com/mattermost/mattermost/server/public/shared/mlog"
 )
 
 const (
 	DefMaxQueueSize = 1000
 
-	KeyAPIPath     = "api_path"
-	KeyEvent       = "event"
-	KeyStatus      = "status"
-	KeyUserID      = "user_id"
-	KeySessionID   = "session_id"
-	KeyClient      = "client"
-	KeyIPAddress   = "ip_address"
-	KeyClusterID   = "cluster_id"
-	KeyWorkspaceID = "workspace_id"
+	KeyAPIPath   = "api_path"
+	KeyEvent     = "event"
+	KeyStatus    = "status"
+	KeyUserID    = "user_id"
+	KeySessionID = "session_id"
+	KeyClient    = "client"
+	KeyIPAddress = "ip_address"
+	KeyClusterID = "cluster_id"
+	KeyTeamID    = "team_id"
 
 	Success = "success"
 	Attempt = "attempt"
@@ -46,12 +46,14 @@ func NewAudit(options ...mlog.Option) (*Audit, error) {
 
 // Configure provides a new configuration for this audit service.
 // Zero or more sources of config can be provided:
-//   cfgFile    - path to file containing JSON
-//   cfgEscaped - JSON string probably from ENV var
+//
+//	cfgFile    - path to file containing JSON
+//	cfgEscaped - JSON string probably from ENV var
 //
 // For each case JSON containing log targets is provided. Target name collisions are resolved
 // using the following precedence:
-//     cfgFile > cfgEscaped
+//
+//	cfgFile > cfgEscaped
 func (a *Audit) Configure(cfgFile string, cfgEscaped string) error {
 	return a.auditLogger.Configure(cfgFile, cfgEscaped, nil)
 }

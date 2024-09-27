@@ -9,7 +9,7 @@ import (
 	"github.com/mattermost/focalboard/server/model"
 	"github.com/wiggin77/merror"
 
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
+	"github.com/mattermost/mattermost/server/public/shared/mlog"
 )
 
 type Action string
@@ -22,12 +22,12 @@ const (
 
 type BlockChangeEvent struct {
 	Action       Action
-	Workspace    string
-	Board        *model.Block
+	TeamID       string
+	Board        *model.Board
 	Card         *model.Block
 	BlockChanged *model.Block
 	BlockOld     *model.Block
-	UserID       string
+	ModifiedBy   *model.BoardMember
 }
 
 // Backend provides an interface for sending notifications.
@@ -42,11 +42,11 @@ type Backend interface {
 type Service struct {
 	mux      sync.RWMutex
 	backends []Backend
-	logger   *mlog.Logger
+	logger   mlog.LoggerIFace
 }
 
 // New creates a notification service with one or more Backends capable of sending notifications.
-func New(logger *mlog.Logger, backends ...Backend) (*Service, error) {
+func New(logger mlog.LoggerIFace, backends ...Backend) (*Service, error) {
 	notify := &Service{
 		backends: make([]Backend, 0, len(backends)),
 		logger:   logger,

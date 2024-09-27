@@ -1,25 +1,25 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`components/viewHeader/viewHeaderActionsMenu return menu and verify call to board archive 1`] = `
+exports[`components/viewHeader/viewHeaderActionsMenu return menu 1`] = `
 <div>
   <div
     class="ModalWrapper"
   >
     <div
-      aria-label="menuwrapper"
-      class="MenuWrapper"
+      aria-label="View header menu"
+      class="MenuWrapper override menuOpened"
       role="button"
     >
-      <div
-        class="Button IconButton"
-        role="button"
+      <button
+        class="IconButton"
+        type="button"
       >
         <i
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
-      </div>
+      </button>
       <div
-        class="Menu noselect bottom"
+        class="Menu noselect left "
       >
         <div
           class="menu-contents"
@@ -27,56 +27,59 @@ exports[`components/viewHeader/viewHeaderActionsMenu return menu and verify call
           <div
             class="menu-options"
           >
-            <div
-              aria-label="Export to CSV"
-              class="MenuOption TextOption menu-option"
-              role="button"
-            >
+            <div>
               <div
-                class="noicon"
-              />
-              <div
-                class="menu-name"
+                aria-label="Export to CSV"
+                class="MenuOption TextOption menu-option"
+                role="button"
               >
-                Export to CSV
+                <div
+                  class="d-flex"
+                >
+                  <div
+                    class="noicon"
+                  />
+                </div>
+                <div
+                  class="menu-option__content"
+                >
+                  <div
+                    class="menu-name"
+                  >
+                    Export to CSV
+                  </div>
+                </div>
+                <div
+                  class="noicon"
+                />
               </div>
-              <div
-                class="noicon"
-              />
             </div>
-            <div
-              aria-label="Export board archive"
-              class="MenuOption TextOption menu-option"
-              role="button"
-            >
+            <div>
               <div
-                class="noicon"
-              />
-              <div
-                class="menu-name"
+                aria-label="Export board archive"
+                class="MenuOption TextOption menu-option"
+                role="button"
               >
-                Export board archive
+                <div
+                  class="d-flex"
+                >
+                  <div
+                    class="noicon"
+                  />
+                </div>
+                <div
+                  class="menu-option__content"
+                >
+                  <div
+                    class="menu-name"
+                  >
+                    Export board archive
+                  </div>
+                </div>
+                <div
+                  class="noicon"
+                />
               </div>
-              <div
-                class="noicon"
-              />
-            </div>
-            <div
-              aria-label="Share board"
-              class="MenuOption TextOption menu-option"
-              role="button"
-            >
-              <div
-                class="noicon"
-              />
-              <div
-                class="menu-name"
-              >
-                Share board
-              </div>
-              <div
-                class="noicon"
-              />
             </div>
           </div>
           <div
@@ -91,12 +94,141 @@ exports[`components/viewHeader/viewHeaderActionsMenu return menu and verify call
               role="button"
             >
               <div
+                class="d-flex"
+              >
+                <div
+                  class="noicon"
+                />
+              </div>
+              <div
+                class="menu-option__content"
+              >
+                <div
+                  class="menu-name"
+                >
+                  Cancel
+                </div>
+              </div>
+              <div
                 class="noicon"
               />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`components/viewHeader/viewHeaderActionsMenu return menu and verify call to board archive 1`] = `
+<div>
+  <div
+    class="ModalWrapper"
+  >
+    <div
+      aria-label="View header menu"
+      class="MenuWrapper override menuOpened"
+      role="button"
+    >
+      <button
+        class="IconButton"
+        type="button"
+      >
+        <i
+          class="CompassIcon icon-dots-horizontal OptionsIcon"
+        />
+      </button>
+      <div
+        class="Menu noselect left "
+      >
+        <div
+          class="menu-contents"
+        >
+          <div
+            class="menu-options"
+          >
+            <div>
               <div
-                class="menu-name"
+                aria-label="Export to CSV"
+                class="MenuOption TextOption menu-option"
+                role="button"
               >
-                Cancel
+                <div
+                  class="d-flex"
+                >
+                  <div
+                    class="noicon"
+                  />
+                </div>
+                <div
+                  class="menu-option__content"
+                >
+                  <div
+                    class="menu-name"
+                  >
+                    Export to CSV
+                  </div>
+                </div>
+                <div
+                  class="noicon"
+                />
+              </div>
+            </div>
+            <div>
+              <div
+                aria-label="Export board archive"
+                class="MenuOption TextOption menu-option"
+                role="button"
+              >
+                <div
+                  class="d-flex"
+                >
+                  <div
+                    class="noicon"
+                  />
+                </div>
+                <div
+                  class="menu-option__content"
+                >
+                  <div
+                    class="menu-name"
+                  >
+                    Export board archive
+                  </div>
+                </div>
+                <div
+                  class="noicon"
+                />
+              </div>
+            </div>
+          </div>
+          <div
+            class="menu-spacer hideOnWidescreen"
+          />
+          <div
+            class="menu-options hideOnWidescreen"
+          >
+            <div
+              aria-label="Cancel"
+              class="MenuOption TextOption menu-option menu-cancel"
+              role="button"
+            >
+              <div
+                class="d-flex"
+              >
+                <div
+                  class="noicon"
+                />
+              </div>
+              <div
+                class="menu-option__content"
+              >
+                <div
+                  class="menu-name"
+                >
+                  Cancel
+                </div>
               </div>
               <div
                 class="noicon"
@@ -116,20 +248,20 @@ exports[`components/viewHeader/viewHeaderActionsMenu return menu and verify call
     class="ModalWrapper"
   >
     <div
-      aria-label="menuwrapper"
-      class="MenuWrapper"
+      aria-label="View header menu"
+      class="MenuWrapper override menuOpened"
       role="button"
     >
-      <div
-        class="Button IconButton"
-        role="button"
+      <button
+        class="IconButton"
+        type="button"
       >
         <i
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
-      </div>
+      </button>
       <div
-        class="Menu noselect bottom"
+        class="Menu noselect left "
       >
         <div
           class="menu-contents"
@@ -137,56 +269,59 @@ exports[`components/viewHeader/viewHeaderActionsMenu return menu and verify call
           <div
             class="menu-options"
           >
-            <div
-              aria-label="Export to CSV"
-              class="MenuOption TextOption menu-option"
-              role="button"
-            >
+            <div>
               <div
-                class="noicon"
-              />
-              <div
-                class="menu-name"
+                aria-label="Export to CSV"
+                class="MenuOption TextOption menu-option"
+                role="button"
               >
-                Export to CSV
+                <div
+                  class="d-flex"
+                >
+                  <div
+                    class="noicon"
+                  />
+                </div>
+                <div
+                  class="menu-option__content"
+                >
+                  <div
+                    class="menu-name"
+                  >
+                    Export to CSV
+                  </div>
+                </div>
+                <div
+                  class="noicon"
+                />
               </div>
-              <div
-                class="noicon"
-              />
             </div>
-            <div
-              aria-label="Export board archive"
-              class="MenuOption TextOption menu-option"
-              role="button"
-            >
+            <div>
               <div
-                class="noicon"
-              />
-              <div
-                class="menu-name"
+                aria-label="Export board archive"
+                class="MenuOption TextOption menu-option"
+                role="button"
               >
-                Export board archive
+                <div
+                  class="d-flex"
+                >
+                  <div
+                    class="noicon"
+                  />
+                </div>
+                <div
+                  class="menu-option__content"
+                >
+                  <div
+                    class="menu-name"
+                  >
+                    Export board archive
+                  </div>
+                </div>
+                <div
+                  class="noicon"
+                />
               </div>
-              <div
-                class="noicon"
-              />
-            </div>
-            <div
-              aria-label="Share board"
-              class="MenuOption TextOption menu-option"
-              role="button"
-            >
-              <div
-                class="noicon"
-              />
-              <div
-                class="menu-name"
-              >
-                Share board
-              </div>
-              <div
-                class="noicon"
-              />
             </div>
           </div>
           <div
@@ -201,215 +336,20 @@ exports[`components/viewHeader/viewHeaderActionsMenu return menu and verify call
               role="button"
             >
               <div
-                class="noicon"
-              />
-              <div
-                class="menu-name"
+                class="d-flex"
               >
-                Cancel
+                <div
+                  class="noicon"
+                />
               </div>
               <div
-                class="noicon"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-`;
-
-exports[`components/viewHeader/viewHeaderActionsMenu return menu with Share Boards 1`] = `
-<div>
-  <div
-    class="ModalWrapper"
-  >
-    <div
-      aria-label="menuwrapper"
-      class="MenuWrapper"
-      role="button"
-    >
-      <div
-        class="Button IconButton"
-        role="button"
-      >
-        <i
-          class="CompassIcon icon-dots-horizontal OptionsIcon"
-        />
-      </div>
-      <div
-        class="Menu noselect bottom"
-      >
-        <div
-          class="menu-contents"
-        >
-          <div
-            class="menu-options"
-          >
-            <div
-              aria-label="Export to CSV"
-              class="MenuOption TextOption menu-option"
-              role="button"
-            >
-              <div
-                class="noicon"
-              />
-              <div
-                class="menu-name"
+                class="menu-option__content"
               >
-                Export to CSV
-              </div>
-              <div
-                class="noicon"
-              />
-            </div>
-            <div
-              aria-label="Export board archive"
-              class="MenuOption TextOption menu-option"
-              role="button"
-            >
-              <div
-                class="noicon"
-              />
-              <div
-                class="menu-name"
-              >
-                Export board archive
-              </div>
-              <div
-                class="noicon"
-              />
-            </div>
-            <div
-              aria-label="Share board"
-              class="MenuOption TextOption menu-option"
-              role="button"
-            >
-              <div
-                class="noicon"
-              />
-              <div
-                class="menu-name"
-              >
-                Share board
-              </div>
-              <div
-                class="noicon"
-              />
-            </div>
-          </div>
-          <div
-            class="menu-spacer hideOnWidescreen"
-          />
-          <div
-            class="menu-options hideOnWidescreen"
-          >
-            <div
-              aria-label="Cancel"
-              class="MenuOption TextOption menu-option menu-cancel"
-              role="button"
-            >
-              <div
-                class="noicon"
-              />
-              <div
-                class="menu-name"
-              >
-                Cancel
-              </div>
-              <div
-                class="noicon"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-`;
-
-exports[`components/viewHeader/viewHeaderActionsMenu return menu without Share Boards 1`] = `
-<div>
-  <div
-    class="ModalWrapper"
-  >
-    <div
-      aria-label="menuwrapper"
-      class="MenuWrapper"
-      role="button"
-    >
-      <div
-        class="Button IconButton"
-        role="button"
-      >
-        <i
-          class="CompassIcon icon-dots-horizontal OptionsIcon"
-        />
-      </div>
-      <div
-        class="Menu noselect bottom"
-      >
-        <div
-          class="menu-contents"
-        >
-          <div
-            class="menu-options"
-          >
-            <div
-              aria-label="Export to CSV"
-              class="MenuOption TextOption menu-option"
-              role="button"
-            >
-              <div
-                class="noicon"
-              />
-              <div
-                class="menu-name"
-              >
-                Export to CSV
-              </div>
-              <div
-                class="noicon"
-              />
-            </div>
-            <div
-              aria-label="Export board archive"
-              class="MenuOption TextOption menu-option"
-              role="button"
-            >
-              <div
-                class="noicon"
-              />
-              <div
-                class="menu-name"
-              >
-                Export board archive
-              </div>
-              <div
-                class="noicon"
-              />
-            </div>
-          </div>
-          <div
-            class="menu-spacer hideOnWidescreen"
-          />
-          <div
-            class="menu-options hideOnWidescreen"
-          >
-            <div
-              aria-label="Cancel"
-              class="MenuOption TextOption menu-option menu-cancel"
-              role="button"
-            >
-              <div
-                class="noicon"
-              />
-              <div
-                class="menu-name"
-              >
-                Cancel
+                <div
+                  class="menu-name"
+                >
+                  Cancel
+                </div>
               </div>
               <div
                 class="noicon"

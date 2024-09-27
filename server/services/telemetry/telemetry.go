@@ -8,10 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mattermost/focalboard/server/model"
 	"github.com/mattermost/focalboard/server/services/scheduler"
 	rudder "github.com/rudderlabs/analytics-go"
 
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
+	"github.com/mattermost/mattermost/server/public/shared/mlog"
+	"github.com/mattermost/mattermost/server/v8/channels/utils"
 )
 
 const (
@@ -26,7 +28,7 @@ type Tracker map[string]interface{}
 
 type Service struct {
 	trackers                   map[string]TrackerFunc
-	logger                     *mlog.Logger
+	logger                     mlog.LoggerIFace
 	rudderClient               rudder.Client
 	telemetryID                string
 	timestampLastTelemetrySent time.Time
@@ -37,7 +39,7 @@ type RudderConfig struct {
 	DataplaneURL string
 }
 
-func New(telemetryID string, logger *mlog.Logger) *Service {
+func New(telemetryID string, logger mlog.LoggerIFace) *Service {
 	service := &Service{
 		logger:      logger,
 		telemetryID: telemetryID,
@@ -92,7 +94,7 @@ func (ts *Service) sendTelemetry(event string, properties map[string]interface{}
 func (ts *Service) initRudder(endpoint, rudderKey string) {
 	if ts.rudderClient == nil {
 		config := rudder.Config{}
-		config.Logger = rudder.StdLogger(ts.logger.StdLogger(mlog.LvlFBTelemetry))
+		config.Logger = rudder.StdLogger(ts.logger.StdLogger(model.LvlFBTelemetry))
 		config.Endpoint = endpoint
 		// For testing
 		if endpoint != rudderDataplaneURL {
@@ -134,11 +136,11 @@ func (ts *Service) doTelemetryIfNeeded(firstRun time.Time) {
 	}
 }
 
-func (ts *Service) RunTelemetryJob(firstRun int64) {
+func (ts *Service) RunTelemetryJob(firstRunMillis int64) {
 	// Send on boot
 	ts.doTelemetry()
 	scheduler.CreateRecurringTask("Telemetry", func() {
-		ts.doTelemetryIfNeeded(time.Unix(0, firstRun*int64(time.Millisecond)))
+		ts.doTelemetryIfNeeded(utils.TimeFromMillis(firstRunMillis))
 	}, timeBetweenTelemetryChecks)
 }
 

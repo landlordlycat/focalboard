@@ -13,6 +13,8 @@ import Menu from '../../widgets/menu'
 import MenuWrapper from '../../widgets/menuWrapper'
 import {getUser} from '../../store/users'
 import {useAppSelector} from '../../store/hooks'
+import Tooltip from '../../widgets/tooltip'
+import GuestBadge from '../../widgets/guestBadge'
 
 import './comment.scss'
 
@@ -28,6 +30,7 @@ const Comment: FC<Props> = (props: Props) => {
     const intl = useIntl()
     const html = Utils.htmlFromMarkdown(comment.title)
     const user = useAppSelector(getUser(userId))
+    const date = new Date(comment.createAt)
 
     return (
         <div
@@ -40,9 +43,13 @@ const Comment: FC<Props> = (props: Props) => {
                     src={userImageUrl}
                 />
                 <div className='comment-username'>{user?.username}</div>
-                <div className='comment-date'>
-                    {Utils.displayDateTime(new Date(comment.createAt), intl)}
-                </div>
+                <GuestBadge show={user?.is_guest}/>
+
+                <Tooltip title={Utils.displayDateTime(date, intl)}>
+                    <div className='comment-date'>
+                        {Utils.relativeDisplayDateTime(date, intl)}
+                    </div>
+                </Tooltip>
 
                 {!props.readonly && (
                     <MenuWrapper>

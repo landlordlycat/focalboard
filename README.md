@@ -1,107 +1,120 @@
+> [!WARNING]
+> This repository is currently not maintained. If you're interested in becoming a maintainer please [let us know here](https://github.com/mattermost-community/focalboard/issues/5038).
+>
+> This repository only contains standalone Focalboard. If you're looking for the Mattermost plugin please see [mattermost/mattermost-plugin-boards](https://github.com/mattermost/mattermost-plugin-boards).
+>
+
 # Focalboard
 
 ![CI Status](https://github.com/mattermost/focalboard/actions/workflows/ci.yml/badge.svg)
-![Mac Build](https://github.com/mattermost/focalboard/actions/workflows/build-mac.yml/badge.svg)
-![Ubuntu Build](https://github.com/mattermost/focalboard/actions/workflows/build-ubuntu.yml/badge.svg)
-![Windows Build](https://github.com/mattermost/focalboard/actions/workflows/build-win-wpf.yml/badge.svg)
 ![CodeQL](https://github.com/mattermost/focalboard/actions/workflows/codeql-analysis.yml/badge.svg)
 ![Dev Release](https://github.com/mattermost/focalboard/actions/workflows/dev-release.yml/badge.svg)
-![Plugin Release](https://github.com/mattermost/focalboard/actions/workflows/plugin-release.yml/badge.svg)
 ![Prod Release](https://github.com/mattermost/focalboard/actions/workflows/prod-release.yml/badge.svg)
 
-Like what you see? :eyes: Give us a GitHub Star! :star:
+![Focalboard](website/site/static/img/hero.jpg)
 
-[![Focalboard](website/site/static/img/hero.jpg)](https://www.focalboard.com)
-
-[Focalboard](https://www.focalboard.com) is an open source, self-hosted alternative to Trello, Notion, and Asana.
+Focalboard is an open source, multilingual, self-hosted project management tool that's an alternative to Trello, Notion, and Asana.
 
 It helps define, organize, track and manage work across individuals and teams. Focalboard comes in two editions:
 
-* **Focalboard Personal Desktop**: A stand-alone desktop app for your todos and personal projects. This is a single-tenant locally run server running Focalboard for optimal speed and performance.
+* **[Personal Desktop](https://www.focalboard.com/docs/personal-edition/desktop/)**: A standalone, single-user [macOS](https://apps.apple.com/app/apple-store/id1556908618?pt=2114704&ct=website&mt=8), [Windows](https://www.microsoft.com/store/apps/9NLN2T0SX9VF?cid=website), or [Linux](https://www.focalboard.com/download/personal-edition/desktop/#linux-desktop) desktop app for your own todos and personal projects.
 
-* **Focalboard Personal Server**: A self-hosted server for your team to collaborate.
+* **[Personal Server](https://www.focalboard.com/download/personal-edition/ubuntu/)**: A standalone, multi-user server for development and personal use.
 
-The same MIT-licensed binary powers both desktop and server editions.
+## Try Focalboard
 
-## Try out Focalboard
+### Personal Desktop (Windows, Mac or Linux Desktop)
 
-**Focalboard Personal Desktop (Windows, Mac or Linux Desktop)**
+* **Windows**: Download from the [Windows App Store](https://www.microsoft.com/store/productId/9NLN2T0SX9VF) or download `focalboard-win.zip` from the [latest release](https://github.com/mattermost/focalboard/releases), unpack, and run `Focalboard.exe`.
+* **Mac**: Download from the [Mac App Store](https://apps.apple.com/us/app/focalboard-insiders/id1556908618?mt=12).
+* **Linux Desktop**: Download `focalboard-linux.tar.gz` from the [latest release](https://github.com/mattermost/focalboard/releases), unpack, and open `focalboard-app`.
 
-Try out **Focalboard Personal Desktop** by going to the Windows Store or the Apple AppStore, searching for `Focalboard` and installing to run the compiled version locally.
+### Personal Server
 
-If you're running a Linux Desktop, [download the latest `focalboard-linux.tar.gz` release](https://github.com/mattermost/focalboard/releases), unpack the `.tar.gz` archive, and open `focalboard-app` from the `focalboard-app` folder.
+**Ubuntu**: You can download and run the compiled Focalboard **Personal Server** on Ubuntu by following [our latest install guide](https://www.focalboard.com/download/personal-edition/ubuntu/).
 
-Note: For Windows and Mac users, while we don't yet offer **Focalboard Personal Desktop** outside of Store-based installs, it is in [consideration for the future](https://github.com/mattermost/focalboard/issues/99) (please upvote the ticket if you're interested in this addition).
+### API Docs
 
-**Focalboard Personal Server (Ubuntu)**
+Boards API docs can be found over at <https://htmlpreview.github.io/?https://github.com/mattermost/focalboard/blob/main/server/swagger/docs/html/index.html>
 
-You can download and run the compiled **Focalboard Personal Server** by following [our latest install guide](https://www.focalboard.com/download/personal-edition/ubuntu/).
+### Getting started
 
-Download the latest server release from [GitHub releases](https://github.com/mattermost/focalboard/releases)
+Our [developer guide](https://developers.mattermost.com/contribute/focalboard/personal-server-setup-guide) has detailed instructions on how to set up your development environment for the **Personal Server**. You can also join the [~Focalboard community channel](https://community.mattermost.com/core/channels/focalboard) to connect with other developers.
 
-## Building the server
+Create an `.env` file in the focalboard directory that contains:
 
-Please refer to the [Developer's Tips & Tricks](https://www.focalboard.com/contribute/getting-started/dev-tips/) for more detailed steps. Here's a summary:
+```
+EXCLUDE_ENTERPRISE="1"
+```
 
-First, install basic dependencies:
-* Go 1.15+
-* Node 10+ and npm
-* Mingw64 on Windows
+To build the server:
 
 ```
 make prebuild
 make
 ```
 
-## Running and testing the server
+To run the server:
 
-To start the server, run `./bin/focalboard-server`
+```
+ ./bin/focalboard-server
+```
 
-Server settings are in config.json.
+Then navigate your browser to [`http://localhost:8000`](http://localhost:8000) to access your Focalboard server. The port is configured in `config.json`.
 
-Open a browser to [http://localhost:8000](http://localhost:8000) to start.
+Once the server is running, you can rebuild just the web app via `make webapp` in a separate terminal window. Reload your browser to see the changes.
 
-## Building and running standalone desktop apps
+### Building and running standalone desktop apps
 
 You can build standalone apps that package the server to run locally against SQLite:
 
-* Mac:
-    * `make mac-app`
-    * run `mac/dist/Focalboard.app`
-    * *Requires: macOS Catalina (10.15)+, Xcode 12+.*
-* Linux:
-    * Install webgtk dependencies
-        * `sudo apt-get install libgtk-3-dev`
-        * `sudo apt-get install libwebkit2gtk-4.0-dev`
-    * `make linux-app`
-    * run `linux/dist/focalboard-app`
-    * *Tested with: Ubuntu 18.04*
-* Windows:
-    * Open a git-bash prompt
-    * `make win-wpf-app`
-    * run `cd win-wpf/msix && focalboard.exe`
-    * *Requires: Windows 10*
+* **Windows**:
+  * *Requires Windows 10, [Windows 10 SDK](https://developer.microsoft.com/en-us/windows/downloads/sdk-archive/) 10.0.19041.0, and .NET 4.8 developer pack*
+  * Open a `git-bash` prompt.
+  * Run `make prebuild`
+  * The above prebuild step needs to be run only when you make changes to or want to install your npm dependencies, etc.
+  * Once the prebuild is completed, you can keep repeating the below steps to build the app & see the changes.
+  * Run `make win-wpf-app`
+  * Run `cd win-wpf/msix && focalboard.exe`
+* **Mac**:
+  * *Requires macOS 11.3+ and Xcode 13.2.1+*
+  * Run `make prebuild`
+  * The above prebuild step needs to be run only when you make changes to or want to install your npm dependencies, etc.
+  * Once the prebuild is completed, you can keep repeating the below steps to build the app & see the changes.
+  * Run `make mac-app`
+  * Run `open mac/dist/Focalboard.app`
+* **Linux**:
+  * *Tested on Ubuntu 18.04*
+  * Install `webgtk` dependencies
+    * Run `sudo apt-get install libgtk-3-dev`
+    * Run `sudo apt-get install libwebkit2gtk-4.0-dev`
+  * Run `make prebuild`
+  * The above prebuild step needs to be run only when you make changes to or want to install your npm dependencies, etc.
+  * Once the prebuild is completed, you can keep repeating the below steps to build the app & see the changes.
+  * Run `make linux-app`
+  * Uncompress `linux/dist/focalboard-linux.tar.gz` to a directory of your choice
+  * Run `focalboard-app` from the directory you have chosen
+* **Docker**:
+  * To run it locally from offical image:
+    * `docker run -it -p 80:8000 mattermost/focalboard`
+  * To build it for your current architecture:
+    * `docker build -f docker/Dockerfile .`
+  * To build it for a custom architecture (experimental):
+    * `docker build -f docker/Dockerfile --platform linux/arm64 .`
 
-Cross-compilation currently isn't fully supported, so please build on the appropriate platform. Refer to the GitHub Actions workflows (build-mac.yml, build-win.yml, build-ubuntu.yml) for the detailed list of steps on each platform.
+Cross-compilation currently isn't fully supported, so please build on the appropriate platform. Refer to the GitHub Actions workflows (`build-mac.yml`, `build-win.yml`, `build-ubuntu.yml`) for the detailed list of steps on each platform.
 
-## Unit tests
+### Unit testing
 
-Before checking-in commits, run: `make ci`, which is similar to the ci.yml workflow and includes:
-* Server unit tests: `make server-test`
-* Webapp eslint: `cd webapp; npm run check`
-* Webapp unit tests: `cd webapp; npm run test`
-* Webapp UI tests: `cd webapp; npm run cypress:ci`
+Before checking in commits, run `make ci`, which is similar to the `.gitlab-ci.yml` workflow and includes:
 
-## Stay informed on progress
+* **Server unit tests**: `make server-test`
+* **Web app ESLint**: `cd webapp; npm run check`
+* **Web app unit tests**: `cd webapp; npm run test`
+* **Web app UI tests**: `cd webapp; npm run cypress:ci`
 
-* **Changelog**: See [CHANGELOG.md](CHANGELOG.md) for the latest updates
-* **Developer Discussion**: Join the [Developer Discussion](https://github.com/mattermost/focalboard/discussions) board
-* **Chat**: Join the [Focalboard community channel](https://community.mattermost.com/core/channels/focalboard)
+### Staying informed
 
-## Share your feedback
-
-File bugs, suggest features, join our forum, learn more [here](https://github.com/mattermost/focalboard/wiki/Share-your-feedback)!
-
-## Contributing
-
-Contribute code, bug reports, and ideas to the future of the Focalboard project. We welcome your input! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to get involved.
+* **Changes**: See the [CHANGELOG](CHANGELOG.md) for the latest updates
+* **Bug Reports**: [File a bug report](https://github.com/mattermost/focalboard/issues/new?assignees=&labels=bug&template=bug_report.md&title=)
+* **Chat**: Join the [~Focalboard community channel](https://community.mattermost.com/core/channels/focalboard)

@@ -2,6 +2,7 @@ package integrationtests
 
 import (
 	"testing"
+	"time"
 
 	"github.com/mattermost/focalboard/server/model"
 	"github.com/mattermost/focalboard/server/utils"
@@ -10,37 +11,38 @@ import (
 )
 
 func TestGetBlocks(t *testing.T) {
-	th := SetupTestHelper().InitBasic()
+	th := SetupTestHelperWithToken(t).Start()
 	defer th.TearDown()
 
-	blocks, resp := th.Client.GetBlocks()
-	require.NoError(t, resp.Error)
-	initialCount := len(blocks)
+	board := th.CreateBoard("team-id", model.BoardTypeOpen)
 
-	blockID1 := utils.NewID(utils.IDTypeBlock)
-	blockID2 := utils.NewID(utils.IDTypeBlock)
-	newBlocks := []model.Block{
+	initialID1 := utils.NewID(utils.IDTypeBlock)
+	initialID2 := utils.NewID(utils.IDTypeBlock)
+	newBlocks := []*model.Block{
 		{
-			ID:       blockID1,
-			RootID:   blockID1,
+			ID:       initialID1,
+			BoardID:  board.ID,
 			CreateAt: 1,
 			UpdateAt: 1,
-			Type:     "board",
+			Type:     model.TypeCard,
 		},
 		{
-			ID:       blockID2,
-			RootID:   blockID2,
+			ID:       initialID2,
+			BoardID:  board.ID,
 			CreateAt: 1,
 			UpdateAt: 1,
-			Type:     "board",
+			Type:     model.TypeCard,
 		},
 	}
-	_, resp = th.Client.InsertBlocks(newBlocks)
+	newBlocks, resp := th.Client.InsertBlocks(board.ID, newBlocks, false)
 	require.NoError(t, resp.Error)
+	require.Len(t, newBlocks, 2)
+	blockID1 := newBlocks[0].ID
+	blockID2 := newBlocks[1].ID
 
-	blocks, resp = th.Client.GetBlocks()
+	blocks, resp := th.Client.GetBlocksForBoard(board.ID)
 	require.NoError(t, resp.Error)
-	require.Len(t, blocks, initialCount+2)
+	require.Len(t, blocks, 2)
 
 	blockIDs := make([]string, len(blocks))
 	for i, b := range blocks {
@@ -51,33 +53,34 @@ func TestGetBlocks(t *testing.T) {
 }
 
 func TestPostBlock(t *testing.T) {
-	th := SetupTestHelper().InitBasic()
+	th := SetupTestHelperWithToken(t).Start()
 	defer th.TearDown()
 
-	blocks, resp := th.Client.GetBlocks()
-	require.NoError(t, resp.Error)
-	initialCount := len(blocks)
+	board := th.CreateBoard("team-id", model.BoardTypeOpen)
 
-	blockID1 := utils.NewID(utils.IDTypeBlock)
-	blockID2 := utils.NewID(utils.IDTypeBlock)
-	blockID3 := utils.NewID(utils.IDTypeBlock)
+	var blockID1 string
+	var blockID2 string
+	var blockID3 string
 
 	t.Run("Create a single block", func(t *testing.T) {
-		block := model.Block{
-			ID:       blockID1,
-			RootID:   blockID1,
+		initialID1 := utils.NewID(utils.IDTypeBlock)
+		block := &model.Block{
+			ID:       initialID1,
+			BoardID:  board.ID,
 			CreateAt: 1,
 			UpdateAt: 1,
-			Type:     "board",
+			Type:     model.TypeCard,
 			Title:    "New title",
 		}
 
-		_, resp := th.Client.InsertBlocks([]model.Block{block})
+		newBlocks, resp := th.Client.InsertBlocks(board.ID, []*model.Block{block}, false)
 		require.NoError(t, resp.Error)
+		require.Len(t, newBlocks, 1)
+		blockID1 = newBlocks[0].ID
 
-		blocks, resp := th.Client.GetBlocks()
+		blocks, resp := th.Client.GetBlocksForBoard(board.ID)
 		require.NoError(t, resp.Error)
-		require.Len(t, blocks, initialCount+1)
+		require.Len(t, blocks, 1)
 
 		blockIDs := make([]string, len(blocks))
 		for i, b := range blocks {
@@ -87,29 +90,36 @@ func TestPostBlock(t *testing.T) {
 	})
 
 	t.Run("Create a couple of blocks in the same call", func(t *testing.T) {
-		newBlocks := []model.Block{
+		initialID2 := utils.NewID(utils.IDTypeBlock)
+		initialID3 := utils.NewID(utils.IDTypeBlock)
+		newBlocks := []*model.Block{
 			{
-				ID:       blockID2,
-				RootID:   blockID2,
+				ID:       initialID2,
+				BoardID:  board.ID,
 				CreateAt: 1,
 				UpdateAt: 1,
-				Type:     "board",
+				Type:     model.TypeCard,
 			},
 			{
-				ID:       blockID3,
-				RootID:   blockID3,
+				ID:       initialID3,
+				BoardID:  board.ID,
 				CreateAt: 1,
 				UpdateAt: 1,
-				Type:     "board",
+				Type:     model.TypeCard,
 			},
 		}
 
-		_, resp := th.Client.InsertBlocks(newBlocks)
+		newBlocks, resp := th.Client.InsertBlocks(board.ID, newBlocks, false)
 		require.NoError(t, resp.Error)
+		require.Len(t, newBlocks, 2)
+		blockID2 = newBlocks[0].ID
+		blockID3 = newBlocks[1].ID
+		require.NotEqual(t, initialID2, blockID2)
+		require.NotEqual(t, initialID3, blockID3)
 
-		blocks, resp := th.Client.GetBlocks()
+		blocks, resp := th.Client.GetBlocksForBoard(board.ID)
 		require.NoError(t, resp.Error)
-		require.Len(t, blocks, initialCount+3)
+		require.Len(t, blocks, 3)
 
 		blockIDs := make([]string, len(blocks))
 		for i, b := range blocks {
@@ -120,56 +130,60 @@ func TestPostBlock(t *testing.T) {
 		require.Contains(t, blockIDs, blockID3)
 	})
 
-	t.Run("Update a block", func(t *testing.T) {
-		block := model.Block{
+	t.Run("Update a block should not be possible through the insert endpoint", func(t *testing.T) {
+		block := &model.Block{
 			ID:       blockID1,
-			RootID:   blockID1,
+			BoardID:  board.ID,
 			CreateAt: 1,
 			UpdateAt: 20,
-			Type:     "board",
+			Type:     model.TypeCard,
 			Title:    "Updated title",
 		}
 
-		_, resp := th.Client.InsertBlocks([]model.Block{block})
+		newBlocks, resp := th.Client.InsertBlocks(board.ID, []*model.Block{block}, false)
 		require.NoError(t, resp.Error)
+		require.Len(t, newBlocks, 1)
+		blockID4 := newBlocks[0].ID
+		require.NotEqual(t, blockID1, blockID4)
 
-		blocks, resp := th.Client.GetBlocks()
+		blocks, resp := th.Client.GetBlocksForBoard(board.ID)
 		require.NoError(t, resp.Error)
-		require.Len(t, blocks, initialCount+3)
+		require.Len(t, blocks, 4)
 
-		var updatedBlock model.Block
+		var block4 *model.Block
 		for _, b := range blocks {
-			if b.ID == blockID1 {
-				updatedBlock = b
+			if b.ID == blockID4 {
+				block4 = b
 			}
 		}
-		require.NotNil(t, updatedBlock)
-		require.Equal(t, "Updated title", updatedBlock.Title)
+		require.NotNil(t, block4)
+		require.Equal(t, "Updated title", block4.Title)
 	})
 }
 
 func TestPatchBlock(t *testing.T) {
-	th := SetupTestHelper().InitBasic()
+	th := SetupTestHelperWithToken(t).Start()
 	defer th.TearDown()
 
-	blockID := utils.NewID(utils.IDTypeBlock)
+	initialID := utils.NewID(utils.IDTypeBlock)
 
-	block := model.Block{
-		ID:       blockID,
-		RootID:   blockID,
+	board := th.CreateBoard("team-id", model.BoardTypeOpen)
+	time.Sleep(10 * time.Millisecond)
+
+	block := &model.Block{
+		ID:       initialID,
+		BoardID:  board.ID,
 		CreateAt: 1,
 		UpdateAt: 1,
-		Type:     "board",
+		Type:     model.TypeCard,
 		Title:    "New title",
 		Fields:   map[string]interface{}{"test": "test value", "test2": "test value 2"},
 	}
 
-	_, resp := th.Client.InsertBlocks([]model.Block{block})
-	require.NoError(t, resp.Error)
-
-	blocks, resp := th.Client.GetBlocks()
-	require.NoError(t, resp.Error)
-	initialCount := len(blocks)
+	newBlocks, resp := th.Client.InsertBlocks(board.ID, []*model.Block{block}, false)
+	th.CheckOK(resp)
+	require.Len(t, newBlocks, 1)
+	blockID := newBlocks[0].ID
 
 	t.Run("Patch a block basic field", func(t *testing.T) {
 		newTitle := "Updated title"
@@ -177,14 +191,14 @@ func TestPatchBlock(t *testing.T) {
 			Title: &newTitle,
 		}
 
-		_, resp := th.Client.PatchBlock(blockID, blockPatch)
+		_, resp := th.Client.PatchBlock(board.ID, blockID, blockPatch, false)
 		require.NoError(t, resp.Error)
 
-		blocks, resp := th.Client.GetBlocks()
+		blocks, resp := th.Client.GetBlocksForBoard(board.ID)
 		require.NoError(t, resp.Error)
-		require.Len(t, blocks, initialCount)
+		require.Len(t, blocks, 1)
 
-		var updatedBlock model.Block
+		var updatedBlock *model.Block
 		for _, b := range blocks {
 			if b.ID == blockID {
 				updatedBlock = b
@@ -202,14 +216,14 @@ func TestPatchBlock(t *testing.T) {
 			},
 		}
 
-		_, resp := th.Client.PatchBlock(blockID, blockPatch)
+		_, resp := th.Client.PatchBlock(board.ID, blockID, blockPatch, false)
 		require.NoError(t, resp.Error)
 
-		blocks, resp := th.Client.GetBlocks()
+		blocks, resp := th.Client.GetBlocksForBoard(board.ID)
 		require.NoError(t, resp.Error)
-		require.Len(t, blocks, initialCount)
+		require.Len(t, blocks, 1)
 
-		var updatedBlock model.Block
+		var updatedBlock *model.Block
 		for _, b := range blocks {
 			if b.ID == blockID {
 				updatedBlock = b
@@ -225,14 +239,14 @@ func TestPatchBlock(t *testing.T) {
 			DeletedFields: []string{"test", "test3", "test100"},
 		}
 
-		_, resp := th.Client.PatchBlock(blockID, blockPatch)
+		_, resp := th.Client.PatchBlock(board.ID, blockID, blockPatch, false)
 		require.NoError(t, resp.Error)
 
-		blocks, resp := th.Client.GetBlocks()
+		blocks, resp := th.Client.GetBlocksForBoard(board.ID)
 		require.NoError(t, resp.Error)
-		require.Len(t, blocks, initialCount)
+		require.Len(t, blocks, 1)
 
-		var updatedBlock model.Block
+		var updatedBlock *model.Block
 		for _, b := range blocks {
 			if b.ID == blockID {
 				updatedBlock = b
@@ -246,28 +260,86 @@ func TestPatchBlock(t *testing.T) {
 }
 
 func TestDeleteBlock(t *testing.T) {
-	th := SetupTestHelper().InitBasic()
+	th := SetupTestHelperWithToken(t).Start()
 	defer th.TearDown()
 
-	blocks, resp := th.Client.GetBlocks()
-	require.NoError(t, resp.Error)
-	initialCount := len(blocks)
+	board := th.CreateBoard("team-id", model.BoardTypeOpen)
+	time.Sleep(10 * time.Millisecond)
 
-	blockID := utils.NewID(utils.IDTypeBlock)
+	var blockID string
 	t.Run("Create a block", func(t *testing.T) {
-		block := model.Block{
-			ID:       blockID,
-			RootID:   blockID,
+		initialID := utils.NewID(utils.IDTypeBlock)
+		block := &model.Block{
+			ID:       initialID,
+			BoardID:  board.ID,
 			CreateAt: 1,
 			UpdateAt: 1,
-			Type:     "board",
+			Type:     model.TypeCard,
 			Title:    "New title",
 		}
 
-		_, resp := th.Client.InsertBlocks([]model.Block{block})
+		newBlocks, resp := th.Client.InsertBlocks(board.ID, []*model.Block{block}, false)
+		require.NoError(t, resp.Error)
+		require.Len(t, newBlocks, 1)
+		require.NotZero(t, newBlocks[0].ID)
+		require.NotEqual(t, initialID, newBlocks[0].ID)
+		blockID = newBlocks[0].ID
+
+		blocks, resp := th.Client.GetBlocksForBoard(board.ID)
+		require.NoError(t, resp.Error)
+		require.Len(t, blocks, 1)
+
+		blockIDs := make([]string, len(blocks))
+		for i, b := range blocks {
+			blockIDs[i] = b.ID
+		}
+		require.Contains(t, blockIDs, blockID)
+	})
+
+	t.Run("Delete a block", func(t *testing.T) {
+		// this avoids triggering uniqueness constraint of
+		// id,insert_at on block history
+		time.Sleep(10 * time.Millisecond)
+
+		_, resp := th.Client.DeleteBlock(board.ID, blockID, false)
 		require.NoError(t, resp.Error)
 
-		blocks, resp := th.Client.GetBlocks()
+		blocks, resp := th.Client.GetBlocksForBoard(board.ID)
+		require.NoError(t, resp.Error)
+		require.Empty(t, blocks)
+	})
+}
+
+func TestUndeleteBlock(t *testing.T) {
+	th := SetupTestHelper(t).InitBasic()
+	defer th.TearDown()
+
+	board := th.CreateBoard("team-id", model.BoardTypeOpen)
+
+	blocks, resp := th.Client.GetBlocksForBoard(board.ID)
+	require.NoError(t, resp.Error)
+	initialCount := len(blocks)
+
+	var blockID string
+	t.Run("Create a block", func(t *testing.T) {
+		initialID := utils.NewID(utils.IDTypeBoard)
+		block := &model.Block{
+			ID:       initialID,
+			BoardID:  board.ID,
+			CreateAt: 1,
+			UpdateAt: 1,
+			Type:     model.TypeBoard,
+			Title:    "New title",
+		}
+
+		newBlocks, resp := th.Client.InsertBlocks(board.ID, []*model.Block{block}, false)
+		require.NoError(t, resp.Error)
+		require.Len(t, newBlocks, 1)
+		require.NotZero(t, newBlocks[0].ID)
+		require.NotEqual(t, initialID, newBlocks[0].ID)
+		blockID = newBlocks[0].ID
+
+		blocks, resp := th.Client.GetBlocksForBoard(board.ID)
 		require.NoError(t, resp.Error)
 		require.Len(t, blocks, initialCount+1)
 
@@ -279,81 +351,44 @@ func TestDeleteBlock(t *testing.T) {
 	})
 
 	t.Run("Delete a block", func(t *testing.T) {
-		_, resp := th.Client.DeleteBlock(blockID)
+		// this avoids triggering uniqueness constraint of
+		// id,insert_at on block history
+		time.Sleep(10 * time.Millisecond)
+
+		_, resp := th.Client.DeleteBlock(board.ID, blockID, false)
 		require.NoError(t, resp.Error)
 
-		blocks, resp := th.Client.GetBlocks()
+		blocks, resp := th.Client.GetBlocksForBoard(board.ID)
 		require.NoError(t, resp.Error)
 		require.Len(t, blocks, initialCount)
 	})
-}
 
-func TestGetSubtree(t *testing.T) {
-	t.Skip("TODO: fix flaky test")
+	t.Run("Undelete a block", func(t *testing.T) {
+		// this avoids triggering uniqueness constraint of
+		// id,insert_at on block history
+		time.Sleep(10 * time.Millisecond)
 
-	th := SetupTestHelper().InitBasic()
-	defer th.TearDown()
-
-	blocks, resp := th.Client.GetBlocks()
-	require.NoError(t, resp.Error)
-	initialCount := len(blocks)
-
-	parentBlockID := utils.NewID(utils.IDTypeBlock)
-	childBlockID1 := utils.NewID(utils.IDTypeBlock)
-	childBlockID2 := utils.NewID(utils.IDTypeBlock)
-
-	t.Run("Create the block structure", func(t *testing.T) {
-		newBlocks := []model.Block{
-			{
-				ID:       parentBlockID,
-				RootID:   parentBlockID,
-				CreateAt: 1,
-				UpdateAt: 1,
-				Type:     "board",
-			},
-			{
-				ID:       childBlockID1,
-				RootID:   parentBlockID,
-				ParentID: parentBlockID,
-				CreateAt: 2,
-				UpdateAt: 2,
-				Type:     "card",
-			},
-			{
-				ID:       childBlockID2,
-				RootID:   parentBlockID,
-				ParentID: parentBlockID,
-				CreateAt: 2,
-				UpdateAt: 2,
-				Type:     "card",
-			},
-		}
-
-		_, resp := th.Client.InsertBlocks(newBlocks)
+		_, resp := th.Client.UndeleteBlock(board.ID, blockID)
 		require.NoError(t, resp.Error)
 
-		blocks, resp := th.Client.GetBlocks()
+		blocks, resp := th.Client.GetBlocksForBoard(board.ID)
 		require.NoError(t, resp.Error)
-		require.Len(t, blocks, initialCount+1) // GetBlocks returns root blocks (null ParentID)
-
-		blockIDs := make([]string, len(blocks))
-		for i, b := range blocks {
-			blockIDs[i] = b.ID
-		}
-		require.Contains(t, blockIDs, parentBlockID)
+		require.Len(t, blocks, initialCount+1)
 	})
 
-	t.Run("Get subtree for parent ID", func(t *testing.T) {
-		blocks, resp := th.Client.GetSubtree(parentBlockID)
-		require.NoError(t, resp.Error)
-		require.Len(t, blocks, 3)
+	t.Run("Try to undelete a block without permissions", func(t *testing.T) {
+		// this avoids triggering uniqueness constraint of
+		// id,insert_at on block history
+		time.Sleep(10 * time.Millisecond)
 
-		blockIDs := make([]string, len(blocks))
-		for i, b := range blocks {
-			blockIDs[i] = b.ID
-		}
-		require.Contains(t, blockIDs, parentBlockID)
-		require.Contains(t, blockIDs, childBlockID1)
-		require.Contains(t, blockIDs, childBlockID2)
+		_, resp := th.Client.DeleteBlock(board.ID, blockID, false)
+		require.NoError(t, resp.Error)
+
+		_, resp = th.Client2.UndeleteBlock(board.ID, blockID)
+		th.CheckForbidden(resp)
+
+		blocks, resp := th.Client.GetBlocksForBoard(board.ID)
+		require.NoError(t, resp.Error)
+		require.Len(t, blocks, initialCount)
 	})
 }

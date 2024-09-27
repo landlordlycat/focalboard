@@ -1,7 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-const tsTransformer = require('@formatjs/ts-transformer');
 const path = require('path');
+
+const tsTransformer = require('@formatjs/ts-transformer');
 const CopyPlugin = require('copy-webpack-plugin');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 
@@ -42,7 +43,7 @@ function makeCommonConfig() {
 
                 },
                 {
-                    test: /\.(png|jpg|jpeg|gif|html)$/,
+                    test: /\.html$/,
                     type: 'asset/resource',
                 },
                 {
@@ -67,20 +68,11 @@ function makeCommonConfig() {
                     exclude: [/node_modules/],
                 },
                 {
-                    test: /\.(eot|tiff|svg|woff2|woff|ttf)$/,
-                    use: [
-                        {
-                            loader: 'file-loader',
-                            options: {
-                                name: '[name].[ext]',
-                                outputPath: 'static',
-                            },
-                        },
-                        {
-                            loader: 'image-webpack-loader',
-                            options: {},
-                        },
-                    ],
+                    test: /\.(eot|tiff|svg|woff2|woff|ttf|png|jpg|jpeg|gif)$/,
+                    type: 'asset/resource',
+                    generator: {
+                        filename: 'static/[name][ext]',
+                    },
                 },
             ],
         },
@@ -96,7 +88,6 @@ function makeCommonConfig() {
             new CopyPlugin({
                 patterns: [
                     {from: path.resolve(__dirname, 'static'), to: 'static'},
-                    {from: path.resolve(__dirname, 'node_modules/easymde/dist/easymde.min.css'), to: 'static'},
                 ],
             }),
             new HtmlWebpackPlugin({

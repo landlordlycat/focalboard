@@ -3,22 +3,26 @@ package server
 import (
 	"fmt"
 
+	"github.com/mattermost/focalboard/server/model"
 	"github.com/mattermost/focalboard/server/services/config"
 	"github.com/mattermost/focalboard/server/services/notify"
+	"github.com/mattermost/focalboard/server/services/permissions"
 	"github.com/mattermost/focalboard/server/services/store"
 	"github.com/mattermost/focalboard/server/ws"
 
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
+	"github.com/mattermost/mattermost/server/public/shared/mlog"
 )
 
 type Params struct {
-	Cfg             *config.Configuration
-	SingleUserToken string
-	DBStore         store.Store
-	Logger          *mlog.Logger
-	ServerID        string
-	WSAdapter       ws.Adapter
-	NotifyBackends  []notify.Backend
+	Cfg                *config.Configuration
+	SingleUserToken    string
+	DBStore            store.Store
+	Logger             mlog.LoggerIFace
+	ServerID           string
+	WSAdapter          ws.Adapter
+	NotifyBackends     []notify.Backend
+	PermissionsService permissions.PermissionsService
+	ServicesAPI        model.ServicesAPI
 }
 
 func (p Params) CheckValid() error {
@@ -32,6 +36,10 @@ func (p Params) CheckValid() error {
 
 	if p.Logger == nil {
 		return ErrServerParam{name: "Logger", issue: "cannot be nil"}
+	}
+
+	if p.PermissionsService == nil {
+		return ErrServerParam{name: "Permissions", issue: "cannot be nil"}
 	}
 	return nil
 }

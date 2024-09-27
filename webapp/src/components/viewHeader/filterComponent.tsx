@@ -10,6 +10,7 @@ import {BoardView} from '../../blocks/boardView'
 import mutator from '../../mutator'
 import {Utils} from '../../utils'
 import Button from '../../widgets/buttons/button'
+import propsRegistry from '../../properties'
 
 import Modal from '../modal'
 
@@ -23,7 +24,7 @@ type Props = {
     onClose: () => void
 }
 
-const FilterComponent = React.memo((props: Props): JSX.Element => {
+const FilterComponent = (props: Props): JSX.Element => {
     const conditionClicked = (optionId: string, filter: FilterClause): void => {
         const {activeView} = props
 
@@ -36,7 +37,7 @@ const FilterComponent = React.memo((props: Props): JSX.Element => {
         Utils.assert(newFilter, `No filter at index ${filterIndex}`)
         if (newFilter.condition !== optionId) {
             newFilter.condition = optionId as FilterCondition
-            mutator.changeViewFilter(activeView.id, activeView.fields.filter, filterGroup)
+            mutator.changeViewFilter(board.id, activeView.id, activeView.fields.filter, filterGroup)
         }
     }
 
@@ -47,21 +48,20 @@ const FilterComponent = React.memo((props: Props): JSX.Element => {
         const filterGroup = createFilterGroup(activeView.fields.filter)
         const filter = createFilterClause()
 
-        // Pick the first select property that isn't already filtered on
-        const selectProperty = board.fields.cardProperties.
+        // Pick the first filterable property that isn't already filtered on
+        const selectProperty = board.cardProperties.
             filter((o: IPropertyTemplate) => !filters.find((f) => f.propertyId === o.id)).
-            find((o: IPropertyTemplate) => o.type === 'select' || o.type === 'multiSelect')
+            find((o: IPropertyTemplate) => propsRegistry.get(o.type).canFilter)
         if (selectProperty) {
             filter.propertyId = selectProperty.id
         }
         filterGroup.filters.push(filter)
 
-        mutator.changeViewFilter(activeView.id, activeView.fields.filter, filterGroup)
+        mutator.changeViewFilter(board.id, activeView.id, activeView.fields.filter, filterGroup)
     }
 
     const {board, activeView} = props
 
-    // TODO: Handle FilterGroups (compound filter statements)
     const filters: FilterClause[] = activeView.fields.filter?.filters.filter((o) => !isAFilterGroupInstance(o)) as FilterClause[] || []
 
     return (
@@ -73,7 +73,7 @@ const FilterComponent = React.memo((props: Props): JSX.Element => {
             >
                 {filters.map((filter) => (
                     <FilterEntry
-                        key={`${filter.propertyId}-${filter.condition}-${filter.values.join(',')}`}
+                        key={`${filter.propertyId}-${filter.condition}`}
                         board={board}
                         view={activeView}
                         conditionClicked={conditionClicked}
@@ -92,6 +92,6 @@ const FilterComponent = React.memo((props: Props): JSX.Element => {
             </div>
         </Modal>
     )
-})
+}
 
-export default FilterComponent
+export default React.memo(FilterComponent)

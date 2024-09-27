@@ -9,7 +9,7 @@ import (
 
 	"github.com/mattermost/focalboard/server/model"
 
-	mm_model "github.com/mattermost/mattermost-server/v6/model"
+	mm_model "github.com/mattermost/mattermost/server/public/model"
 )
 
 func Test_extractMentions(t *testing.T) {
@@ -38,7 +38,7 @@ func Test_extractMentions(t *testing.T) {
 func makeBlock(text string) *model.Block {
 	return &model.Block{
 		ID:    mm_model.NewId(),
-		Type:  "comment",
+		Type:  model.TypeComment,
 		Title: text,
 	}
 }

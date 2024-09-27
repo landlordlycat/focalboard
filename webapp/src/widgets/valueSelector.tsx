@@ -2,7 +2,8 @@
 // See LICENSE.txt for license information.
 import React from 'react'
 import {useIntl} from 'react-intl'
-import {ActionMeta, FormatOptionLabelMeta, ValueType} from 'react-select'
+import {ActionMeta, OnChangeValue} from 'react-select'
+import {FormatOptionLabelMeta} from 'react-select/base'
 import CreatableSelect from 'react-select/creatable'
 
 import {CSSObject} from '@emotion/serialize'
@@ -37,14 +38,14 @@ type Props = {
 
 type LabelProps = {
     option: IPropertyOption
-    meta: FormatOptionLabelMeta<IPropertyOption, true | false>
+    meta: FormatOptionLabelMeta<IPropertyOption>
     onChangeColor: (option: IPropertyOption, color: string) => void
     onDeleteOption: (option: IPropertyOption) => void
     onDeleteValue?: (value: IPropertyOption) => void
     isMulti?: boolean
 }
 
-const ValueSelectorLabel = React.memo((props: LabelProps): JSX.Element => {
+const ValueSelectorLabel = (props: LabelProps): JSX.Element => {
     const {option, onDeleteValue, meta, isMulti} = props
     const intl = useIntl()
     if (meta.context === 'value') {
@@ -70,7 +71,10 @@ const ValueSelectorLabel = React.memo((props: LabelProps): JSX.Element => {
         )
     }
     return (
-        <div className='value-menu-option'>
+        <div
+            className='value-menu-option'
+            role='menuitem'
+        >
             <div className='label-container'>
                 <Label color={option.color}>{option.value}</Label>
             </div>
@@ -87,7 +91,7 @@ const ValueSelectorLabel = React.memo((props: LabelProps): JSX.Element => {
                         onClick={() => props.onDeleteOption(option)}
                     />
                     <Menu.Separator/>
-                    {Object.entries(Constants.menuColors).map(([key, color]: any) => (
+                    {Object.entries(Constants.menuColors).map(([key, color]: [string, string]) => (
                         <Menu.Color
                             key={key}
                             id={key}
@@ -99,7 +103,7 @@ const ValueSelectorLabel = React.memo((props: LabelProps): JSX.Element => {
             </MenuWrapper>
         </div>
     )
-})
+}
 
 const valueSelectorStyle = {
     ...getSelectBaseStyle(),
@@ -156,13 +160,14 @@ function ValueSelector(props: Props): JSX.Element {
     const intl = useIntl()
     return (
         <CreatableSelect
+            noOptionsMessage={() => intl.formatMessage({id: 'ValueSelector.noOptions', defaultMessage: 'No options. Start typing to add the first one!'})}
             aria-label={intl.formatMessage({id: 'ValueSelector.valueSelector', defaultMessage: 'Value selector'})}
             captureMenuScroll={true}
             maxMenuHeight={1200}
             isMulti={props.isMulti}
             isClearable={true}
             styles={valueSelectorStyle}
-            formatOptionLabel={(option: IPropertyOption, meta: FormatOptionLabelMeta<IPropertyOption, true | false>) => (
+            formatOptionLabel={(option: IPropertyOption, meta: FormatOptionLabelMeta<IPropertyOption>) => (
                 <ValueSelectorLabel
                     option={option}
                     meta={meta}
@@ -173,30 +178,39 @@ function ValueSelector(props: Props): JSX.Element {
                 />
             )}
             className='ValueSelector'
+            classNamePrefix='ValueSelector'
             options={props.options}
             getOptionLabel={(o: IPropertyOption) => o.value}
             getOptionValue={(o: IPropertyOption) => o.id}
-            onChange={(value: ValueType<IPropertyOption, true | false>, action: ActionMeta<IPropertyOption>): void => {
-                if (action.action === 'select-option') {
+            onChange={(value: OnChangeValue<IPropertyOption, true | false>, action: ActionMeta<IPropertyOption>): void => {
+                if (action.action === 'select-option' || action.action === 'pop-value') {
                     if (Array.isArray(value)) {
                         props.onChange((value as IPropertyOption[]).map((option) => option.id))
                     } else {
                         props.onChange((value as IPropertyOption).id)
+                        props.onBlur?.()
                     }
                 } else if (action.action === 'clear') {
                     props.onChange('')
                 }
             }}
+            onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                    props.onBlur?.()
+                }
+            }}
             onBlur={props.onBlur}
             onCreateOption={props.onCreate}
             autoFocus={true}
-            value={props.value}
-            closeMenuOnSelect={true}
+            value={props.value || null}
+            closeMenuOnSelect={!props.isMulti}
             placeholder={props.emptyValue}
             hideSelectedOptions={false}
             defaultMenuIsOpen={true}
+            menuIsOpen={props.isMulti}
+            blurInputOnSelect={!props.isMulti}
         />
     )
 }
 
-export default ValueSelector
+export default React.memo(ValueSelector)

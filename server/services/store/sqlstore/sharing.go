@@ -1,18 +1,16 @@
 package sqlstore
 
 import (
-	"time"
-
 	"github.com/mattermost/focalboard/server/model"
-	"github.com/mattermost/focalboard/server/services/store"
+	"github.com/mattermost/focalboard/server/utils"
 
 	sq "github.com/Masterminds/squirrel"
 )
 
-func (s *SQLStore) UpsertSharing(c store.Container, sharing model.Sharing) error {
-	now := time.Now().Unix()
+func (s *SQLStore) upsertSharing(db sq.BaseRunner, sharing model.Sharing) error {
+	now := utils.GetMillis()
 
-	query := s.getQueryBuilder().
+	query := s.getQueryBuilder(db).
 		Insert(s.tablePrefix+"sharing").
 		Columns(
 			"id",
@@ -28,12 +26,12 @@ func (s *SQLStore) UpsertSharing(c store.Container, sharing model.Sharing) error
 			sharing.ModifiedBy,
 			now,
 		)
-	if s.dbType == mysqlDBType {
+	if s.dbType == model.MysqlDBType {
 		query = query.Suffix("ON DUPLICATE KEY UPDATE enabled = ?, token = ?, modified_by = ?, update_at = ?",
 			sharing.Enabled, sharing.Token, sharing.ModifiedBy, now)
 	} else {
 		query = query.Suffix(
-			`ON CONFLICT (id) 
+			`ON CONFLICT (id)
 			 DO UPDATE SET enabled = EXCLUDED.enabled, token = EXCLUDED.token, modified_by = EXCLUDED.modified_by, update_at = EXCLUDED.update_at`,
 		)
 	}
@@ -42,8 +40,8 @@ func (s *SQLStore) UpsertSharing(c store.Container, sharing model.Sharing) error
 	return err
 }
 
-func (s *SQLStore) GetSharing(c store.Container, rootID string) (*model.Sharing, error) {
-	query := s.getQueryBuilder().
+func (s *SQLStore) getSharing(db sq.BaseRunner, boardID string) (*model.Sharing, error) {
+	query := s.getQueryBuilder(db).
 		Select(
 			"id",
 			"enabled",
@@ -52,7 +50,7 @@ func (s *SQLStore) GetSharing(c store.Container, rootID string) (*model.Sharing,
 			"update_at",
 		).
 		From(s.tablePrefix + "sharing").
-		Where(sq.Eq{"id": rootID})
+		Where(sq.Eq{"id": boardID})
 	row := query.QueryRow()
 	sharing := model.Sharing{}
 
